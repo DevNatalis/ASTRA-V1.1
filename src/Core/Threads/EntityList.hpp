@@ -1,6 +1,7 @@
 #pragma once
 #include <Includes/Includes.hpp>
 #include <Core/SDK/Guard.hpp>
+#include <Auth/auth_manager.hpp>
 #include <unordered_map>
 #include <string>
 #include <mutex>
@@ -102,7 +103,10 @@ namespace Core {
                 while (true) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-                    if (!g_MenuInfo.IsLogged && !g_Variables.g_bPassedByThisVerify)
+                    // Gate de sessao (VULN 1): sem recibo valido do servidor,
+                    // nenhum dado de entidade e coletado — flipar IsLogged
+                    // em memoria nao libera ESP/aimbot.
+                    if (!g_Auth.IsSessionValid())
                         continue;
 
                     CReplayInterFace* replayInterface = Core::SDK::Pointers::pReplayInterFace;
@@ -179,7 +183,17 @@ namespace Core {
                             }
                         }
                         if ((entity.NetworkInfo.UserName == "npc" || entity.NetworkInfo.UserName.empty()) && entity.IsPlayer) {
-                            entity.NetworkInfo.UserName = "Jogador_" + std::to_string(entity.Id);
+                            // Fonte autoritativa: lista do servidor (server-id -> nome).
+                            // A thread UpdateNames atualiza esse mapa a cada ~6s.
+                            Core::SDK::Game::NetworkInfo known{};
+                            if (g_UpdateNames.GetById(entity.Id, known) && !known.UserName.empty()) {
+                                entity.NetworkInfo.UserName = known.UserName;
+                            }
+                        }
+                        // Sem nome resolvido: deixa vazio. O ESP omite o texto
+                        // em vez de exibir um nome falso ("Jogador_X").
+                        if (entity.NetworkInfo.UserName == "npc" && entity.IsPlayer) {
+                            entity.NetworkInfo.UserName.clear();
                         }
 
                         freshEntities.push_back(std::move(entity));

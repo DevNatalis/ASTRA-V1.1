@@ -35,7 +35,7 @@ namespace Core {
 		std::thread(&Threads::cUpdatePtrs::Update, Threads::g_UpdatePtrs).detach();
 		std::thread(&Threads::cEntityList::Update, &Threads::g_EntityList).detach();
 		std::thread(&Threads::cVehicleList::Update, &Threads::g_VehicleList).detach();
-		//std::thread(&Threads::cUpdateNames::Update, &Threads::g_UpdateNames).detach();
+		std::thread(&Threads::cUpdateNames::Update, &Threads::g_UpdateNames).detach();
 
 		//Exploits
 		std::thread(&Features::Exploits::cResourceList::List, Features::Exploits::g_ResourceList).detach();

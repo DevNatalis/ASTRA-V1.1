@@ -131,12 +131,14 @@ namespace Gui
 		static RECT old_rc;
 		ZeroMemory(&Message, sizeof(MSG));
 
-		while (Message.message != WM_QUIT)
+		while (!CloseRequested)
 		{
-			if (PeekMessage(&Message, g_Variables.g_hCheatWindow, 0, 0, PM_REMOVE)) {
+			while (PeekMessage(&Message, nullptr, 0, 0, PM_REMOVE)) {
+				if (Message.message == WM_QUIT) { CloseRequested = true; break; }
 				TranslateMessage(&Message);
 				DispatchMessage(&Message);
 			}
+			if (CloseRequested) break;
 
 			HWND ActiveWindow = GetForegroundWindow();
 
@@ -362,7 +364,11 @@ namespace Gui
 				Overlay::CreateRenderTarget();
 			}
 			return 0;
+		case WM_CLOSE:
+			CloseRequested = true;
+			return 0;
 		case WM_DESTROY:
+			CloseRequested = true;
 			::PostQuitMessage(0);
 			return 0;
 		case WM_PAINT:

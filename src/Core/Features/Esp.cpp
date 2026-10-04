@@ -544,7 +544,7 @@ void Core::Features::cEsp::Draw( )
 			DrawList->AddText( g_Variables.m_DrawFont, g_Variables.m_DrawFont->FontSize, TextPos, Cfg->WeaponNameCol, WeaponNameUnder.c_str( ) );
 		}
 
-		if ( Cfg->UserNames )
+		if ( Cfg->UserNames && !Entity.NetworkInfo.UserName.empty( ) )
 		{
 
 			std::string PlayerName = Entity.NetworkInfo.UserName;

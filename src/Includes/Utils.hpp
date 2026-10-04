@@ -148,13 +148,24 @@ namespace Utils {
 	}
 
 	inline  std::string GetClipboard( ) {
-		OpenClipboard( NULL );
+		if (!OpenClipboard(NULL)) return {};
+		struct ClipboardGuard {
+			~ClipboardGuard() { CloseClipboard(); }
+		} clipboardGuard;
 		HANDLE hData = GetClipboardData( CF_TEXT );
+		if (!hData) return {};
+		const SIZE_T capacity = GlobalSize(hData);
+		if (!capacity) return {};
 		char * pszText = static_cast< char * >( GlobalLock( hData ) );
-		std::string text( pszText );
-		GlobalUnlock( hData );
-		CloseClipboard( );
-		return text;
+		if (!pszText) return {};
+		struct GlobalLockGuard {
+			HANDLE handle;
+			~GlobalLockGuard() { GlobalUnlock(handle); }
+		} lockGuard{ hData };
+		SIZE_T length = 0;
+		while (length < capacity && pszText[length] != '\0') ++length;
+		if (length == capacity) return {};
+		return std::string(pszText, length);
 	}
 
 	inline void PasteClipboard( const char * seila ) {

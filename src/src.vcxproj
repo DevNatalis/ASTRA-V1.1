@@ -72,20 +72,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)Includes;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(ProjectDir)Includes\ImGui\Files\FreeType\win64;$(DXSDK_DIR)Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Pietro\Downloads\Cheat\SDK\SDK\Include;$(ProjectDir);$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(ProjectDir)Includes;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Pietro\Downloads\Cheat\SDK\SDK\Lib\x64;$(ProjectDir)Includes\ImGui\Files\FreeType\win64;$(DXSDK_DIR)Lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(ProjectDir)Includes\ImGui\Files\FreeType\win64;$(DXSDK_DIR)Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)Includes;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)Includes;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -145,7 +145,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -157,7 +157,7 @@
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <EntryPointSymbol>
       </EntryPointSymbol>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(DXSDK_DIR)Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -186,18 +186,16 @@
     <ClInclude Include="Core\Threads\UpdateNames.hpp" />
     <ClInclude Include="Core\Threads\UpdatePointers.hpp" />
     <ClInclude Include="Core\Threads\VehicleList.hpp" />
-    <ClInclude Include="curl\curl.h" />
-    <ClInclude Include="curl\curlver.h" />
-    <ClInclude Include="curl\easy.h" />
-    <ClInclude Include="curl\header.h" />
-    <ClInclude Include="curl\mprintf.h" />
-    <ClInclude Include="curl\multi.h" />
-    <ClInclude Include="curl\options.h" />
-    <ClInclude Include="curl\stdcheaders.h" />
-    <ClInclude Include="curl\system.h" />
-    <ClInclude Include="curl\typecheck-gcc.h" />
-    <ClInclude Include="curl\urlapi.h" />
-    <ClInclude Include="curl\websockets.h" />
+    <ClInclude Include="Security\Api\curl\curl.h" />
+    <ClInclude Include="Security\Api\curl\curlver.h" />
+    <ClInclude Include="Security\Api\curl\easy.h" />
+    <ClInclude Include="Security\Api\curl\mprintf.h" />
+    <ClInclude Include="Security\Api\curl\multi.h" />
+    <ClInclude Include="Security\Api\curl\options.h" />
+    <ClInclude Include="Security\Api\curl\stdcheaders.h" />
+    <ClInclude Include="Security\Api\curl\system.h" />
+    <ClInclude Include="Security\Api\curl\typecheck-gcc.h" />
+    <ClInclude Include="Security\Api\curl\urlapi.h" />
     <ClInclude Include="Gui\Custom\Custom.hpp" />
     <ClInclude Include="Gui\Gui.hpp" />
     <ClInclude Include="Gui\Overlay\Overlay.hpp" />
@@ -273,7 +271,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="Includes\ImGui\Files\freetype\win64\freetype.lib" />
+    <Library Include="Includes\ImGui\Files\FreeType\win64\freetype.lib" />
     <Library Include="Security\Api\curl\libcurl.lib" />
   </ItemGroup>
   <ItemGroup>

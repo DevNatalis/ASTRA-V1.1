@@ -8,6 +8,7 @@ namespace Gui {
 	static UINT                     g_ResizeWidth, g_ResizeHeight;
 	static ID3D11RenderTargetView* g_mainRenderTargetView;
 	inline MSG Message = { NULL };
+	inline bool CloseRequested = false; // Owned by the render / window-message thread.
 
 	class Overlay {
 	private:

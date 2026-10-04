@@ -12,7 +12,9 @@ namespace ReferenceMenu
 
     inline ImU32 Color(int r, int g, int b)
     {
-        return ImGui::GetColorU32(ImVec4(r / 255.f, g / 255.f, b / 255.f, 1.f));
+        // Raw draw-list colors bake alpha: without this, menu art ignores the
+        // ImGuiStyleVar_Alpha fade and stays on screen when the menu is closed.
+        return ImGui::GetColorU32(ImVec4(r / 255.f, g / 255.f, b / 255.f, ImGui::GetStyle().Alpha));
     }
 
     inline bool Nav(const char* label, bool selected, bool child = false)
@@ -41,6 +43,12 @@ namespace ReferenceMenu
 
     inline void Shell()
     {
+        // Menu closed -> style alpha fades to 0. Skip raw draws entirely so
+        // nothing (logo, sidebar art) lingers on screen. ESP/FOV/watermark
+        // are drawn elsewhere and are unaffected.
+        const float menuAlpha = ImGui::GetStyle().Alpha;
+        if (menuAlpha <= 0.01f)
+            return;
         const ImVec2 p = ImGui::GetWindowPos();
         const ImVec2 size = ImGui::GetWindowSize();
         ImDrawList* draw = ImGui::GetWindowDrawList();
@@ -51,7 +59,8 @@ namespace ReferenceMenu
         const float logoSize = 80.f;
         const ImVec2 logoPos = p + ImVec2((SidebarWidth - logoSize) * .5f, 10.f);
         if (g_Variables.Logo)
-            draw->AddImage(g_Variables.Logo, logoPos, logoPos + ImVec2(logoSize, logoSize));
+            draw->AddImage(g_Variables.Logo, logoPos, logoPos + ImVec2(logoSize, logoSize),
+                ImVec2(0, 0), ImVec2(1, 1), ImGui::GetColorU32(ImVec4(1, 1, 1, menuAlpha)));
 
         constexpr float navigationTop = 100.f;
         ImGui::SetCursorPos(ImVec2(12, navigationTop));

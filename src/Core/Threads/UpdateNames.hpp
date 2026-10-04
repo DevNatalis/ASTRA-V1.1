@@ -8,6 +8,8 @@
 #include <string>
 #include <regex>
 #include <iostream>
+#include <shared_mutex>
+#include <unordered_map>
 
 #define CURL_STATIC_LIB
 #include <Security/Api/curl/curl.h>
@@ -33,6 +35,18 @@ namespace Core
 			std::string RedirectUrl;
 		public:
 			std::unordered_map<int, Core::SDK::Game::NetworkInfo> NetworkMap;
+		mutable std::shared_mutex NetworkMapMutex;
+
+		// Leitura thread-safe para a EntityList (ela roda a cada 1ms).
+		bool GetById(int id, Core::SDK::Game::NetworkInfo& out) const
+		{
+			std::shared_lock<std::shared_mutex> lock(NetworkMapMutex);
+			auto it = NetworkMap.find(id);
+			if (it == NetworkMap.end())
+				return false;
+			out = it->second;
+			return true;
+		}
 		private:
 			static size_t WriteCallBack( void * contents, size_t size, size_t nmemb, void * userp )
 			{
@@ -70,10 +84,10 @@ namespace Core
 
 				if ( DirFiveM.empty( ) )
 				{
-					char value[ 255 ];
-					DWORD BufferSize = 8192;
+					char value[ 255 ] = {};
+					DWORD BufferSize = sizeof(value);
 
-					auto GetDirFiveM = RegGetValue( HKEY_CURRENT_USER, xorstr( "Software\\CitizenFX\\FiveM" ), xorstr( "Last Run Location" ), RRF_RT_REG_SZ, NULL, ( PVOID ) &value, &BufferSize );
+					auto GetDirFiveM = RegGetValueA( HKEY_CURRENT_USER, xorstr( "Software\\CitizenFX\\FiveM" ), xorstr( "Last Run Location" ), RRF_RT_REG_SZ, NULL, value, &BufferSize );
 
 					if ( GetDirFiveM != ERROR_SUCCESS ) 
 						return xorstr( "" );
@@ -187,9 +201,17 @@ namespace Core
 				if ( ResponseStr.empty( ) )
 					return NULL;
 
-				nlohmann::json ResponseJson = json::parse( ResponseStr );
+				nlohmann::json ResponseJson;
+				try { ResponseJson = json::parse( ResponseStr ); }
+				catch ( ... ) { return NULL; }
+				if ( !ResponseJson.is_object( ) || !ResponseJson.contains( xorstr( "Data" ) ) )
+					return NULL;
 				nlohmann::json ServerData = ResponseJson[ xorstr( "Data" ) ];
+				if ( !ServerData.is_object( ) || !ServerData.contains( xorstr( "players" ) ) )
+					return NULL;
 				nlohmann::json PlayersArray = ServerData[ xorstr( "players" ) ];
+				if ( !PlayersArray.is_array( ) )
+					return NULL;
 
 				return PlayersArray;
 			}
@@ -201,39 +223,57 @@ namespace Core
 				if ( PlayersArr == NULL )
 					return;
 
+				std::unordered_map<int, Core::SDK::Game::NetworkInfo> fresh;
 				for ( const auto & PlayerJson : PlayersArr )
 				{
-					nlohmann::json Player = json::parse( PlayerJson.dump( ) );
-					int PlayerId = Player[ xorstr( "id" ) ].get<int>();
-					std::string PlayerName = Player[ xorstr( "name" ) ].get<std::string>();
-					nlohmann::json Identifiers = Player[ xorstr( "identifiers" ) ];
+					// Um jogador malformado nao pode derrubar o refresh inteiro.
+					try {
+						if ( !PlayerJson.is_object( ) )
+							continue;
+						if ( !PlayerJson.contains( xorstr( "id" ) ) || !PlayerJson.contains( xorstr( "name" ) ) )
+							continue;
+						if ( !PlayerJson[ xorstr( "id" ) ].is_number_integer( ) || !PlayerJson[ xorstr( "name" ) ].is_string( ) )
+							continue;
+						int PlayerId = PlayerJson[ xorstr( "id" ) ].get<int>( );
+						std::string PlayerName = PlayerJson[ xorstr( "name" ) ].get<std::string>( );
+						if ( PlayerId < 0 || PlayerName.empty( ) )
+							continue;
 
-					std::string Discord, SteamId;
+						std::string Discord, SteamId;
 
-					if ( Identifiers != NULL )
-					{
-						for ( const auto & Identifier : Identifiers ) 
+						auto IdIt = PlayerJson.find( xorstr( "identifiers" ) );
+						if ( IdIt != PlayerJson.end( ) && IdIt->is_array( ) )
 						{
+							for ( const auto & Identifier : *IdIt )
+							{
 
-							if ( !Identifier.is_string( ) )
-								continue;
+								if ( !Identifier.is_string( ) )
+									continue;
 
-							std::string IdentifierVal = Identifier;
+								std::string IdentifierVal = Identifier.get<std::string>( );
 
-							if ( Identifier.find( "discord:" ) != Identifier.end() )
-								Discord = IdentifierVal.substr( 8 );
-							if ( Identifier.find( "steam:" ) != Identifier.end() )
-								SteamId = IdentifierVal.substr( 6 );
+								if ( IdentifierVal.rfind( "discord:", 0 ) == 0 )
+									Discord = IdentifierVal.substr( 8 );
+								if ( IdentifierVal.rfind( "steam:", 0 ) == 0 )
+									SteamId = IdentifierVal.substr( 6 );
 
+							}
 						}
+
+						fresh[ PlayerId ] =
+						{
+							PlayerName, Discord, SteamId
+						};
+					}
+					catch ( ... ) {
+						continue;
 					}
 
-					NetworkMap[ PlayerId ] =
-					{ 
-						PlayerName, Discord, SteamId 
-					};
-
 				}
+
+				// Troca atomica: leitores (EntityList) nunca veem mapa pela metade.
+				std::unique_lock<std::shared_mutex> lock(NetworkMapMutex);
+				NetworkMap.swap(fresh);
 			}
 
 			void Update( ) 
@@ -248,14 +288,12 @@ namespace Core
 						GetPlayerNames( );
 					}
 					catch ( const std::exception & e ) {
-						std::string errorMessage = xorstr( "Crash Detected. Code: 2\nException: " );
-						errorMessage += e.what( );
-						MessageBox( NULL, errorMessage.c_str( ), xorstr( "Error" ), MB_ICONERROR );
-						break;
+						// Falha de rede/parse esperada (servidor fora do ar, resposta nao-JSON).
+						// So registra e tenta de novo em 6s — nunca popup, nunca mata a thread.
+						OutputDebugStringA( ( std::string( "[UpdateNames] refresh falhou: " ) + e.what( ) + "\n" ).c_str( ) );
 					}
 					catch ( ... ) {
-						MessageBox( NULL, xorstr( "Crash Detected. Code: 2\nUnknown exception caught." ), xorstr( "Error" ), MB_ICONERROR );
-						break;
+						OutputDebugStringA( "[UpdateNames] refresh falhou (excecao desconhecida).\n" );
 					}
 
 				}

@@ -76,13 +76,6 @@ namespace
 	}
 }
 
-inline void CheatLogin(const std::string& DiscordID)
-{
-	g_MenuInfo.MenuSize = { ReferenceMenu::Width, ReferenceMenu::Height };
-	g_MenuInfo.IsLogged = true;
-	Core::GetOffsets();
-}
-
 float accent_color[4] = {
 	255 / 255.f,
 	212 / 255.f,
@@ -299,13 +292,21 @@ void Gui::Rendering()
 {
 	if (!g_MenuInfo.IsLogged)
 	{
-		g_MenuInfo.MenuSize = { 820, 540 };
+		g_Auth.ConsumeInitialization();
+        const ImVec2 available = ImGui::GetIO().DisplaySize;
+        const float desiredHeight = g_Auth.page == AuthPage::Register ? 660.f : 540.f;
+        g_MenuInfo.MenuSize = { ImMin(820.f, ImMax(280.f, available.x - 24.f)),
+                               ImMin(desiredHeight, ImMax(280.f, available.y - 24.f)) };
 	}
 	else
 	{
 		g_MenuInfo.MenuSize = { ReferenceMenu::Width, ReferenceMenu::Height };
 	}
 	ImGui::SetNextWindowSize(g_MenuInfo.MenuSize);
+    if (!g_MenuInfo.IsLogged) {
+        // Keep the complete auth window inside the current viewport after resizing.
+        ImGui::SetNextWindowPos((ImGui::GetIO().DisplaySize - g_MenuInfo.MenuSize) * .5f);
+    }
 
 	if (!PauseLoop) {
 		ImGui::SetNextWindowPos(g_Variables.g_vGameWindowSize / 2 - g_MenuInfo.MenuSize / 2);
@@ -597,12 +598,7 @@ void Gui::Rendering()
 			static bool kaInitAttempted = false;
 			if (!kaInitAttempted) {
 				kaInitAttempted = true;
-				std::thread([]() {
-					bool ok = g_Auth.Initialize();
-					if (!ok) {
-						g_Auth.errorMsg = "Unable to connect to authentication server.\nCheck your internet connection.";
-					}
-				}).detach();
+                g_Auth.InitializeAsync();
 			}
 
 			// Notificacao de build (uma vez).
@@ -619,49 +615,84 @@ void Gui::Rendering()
 
             const ImVec2 origin = ImGui::GetWindowPos();
             ImDrawList* draw = ImGui::GetWindowDrawList();
-            draw->AddRectFilled(origin, origin + g_MenuInfo.MenuSize, ImGui::GetColorU32(UI::Background()), 16.f);
-            draw->AddRectFilled(origin, origin + ImVec2(330, 540), ImGui::GetColorU32(UI::Sidebar()), 16.f, ImDrawFlags_RoundCornersLeft);
-            draw->AddRect(origin, origin + g_MenuInfo.MenuSize, ImGui::GetColorU32(UI::Border()), 16.f);
-            draw->AddLine(origin + ImVec2(330, 24), origin + ImVec2(330, 516), ImGui::GetColorU32(UI::BorderSoft()));
+            // Raw draw-list colors ignore ImGuiStyleVar_Alpha, so scale them
+            // manually — otherwise the login logo pops in at full opacity
+            // while the overlay is still fading in/out.
+            const float loginAlpha = ImGui::GetStyle().Alpha;
+            auto A = [loginAlpha](ImVec4 c) { c.w *= loginAlpha; return c; };
+            draw->AddRectFilled(origin, origin + g_MenuInfo.MenuSize, ImGui::GetColorU32(A(UI::Background())), 16.f);
+            const bool showBrand = g_MenuInfo.MenuSize.x >= 700.f;
+            const float panelHeight = g_MenuInfo.MenuSize.y;
+            if (showBrand) {
+            draw->AddRectFilled(origin, origin + ImVec2(330, panelHeight), ImGui::GetColorU32(A(UI::Sidebar())), 16.f, ImDrawFlags_RoundCornersLeft);
+            draw->AddRect(origin, origin + g_MenuInfo.MenuSize, ImGui::GetColorU32(A(UI::Border())), 16.f);
+            draw->AddLine(origin + ImVec2(330, 24), origin + ImVec2(330, panelHeight - 24.f), ImGui::GetColorU32(A(UI::BorderSoft())));
             const float t = UI::ReduceMotion ? 0.f : (float)ImGui::GetTime();
             const float drift = UI::ReduceMotion ? 0.f : sinf(t * 1.1f) * 4.f;
-            draw->PushClipRect(origin + ImVec2(1, 1), origin + ImVec2(329, 539), true);
+            draw->PushClipRect(origin + ImVec2(1, 1), origin + ImVec2(329, panelHeight - 1.f), true);
             for (int ring = 5; ring >= 0; --ring) {
                 const float radius = 108.f + ring * 13.f + sinf(t * 0.8f) * 3.f;
                 draw->AddCircle(origin + ImVec2(165, 265), radius,
-                    ImGui::GetColorU32(ImVec4(1.f, .78f, .10f, .035f + (5 - ring) * .008f)), 96, 1.f);
+                    ImGui::GetColorU32(A(ImVec4(1.f, .78f, .10f, .035f + (5 - ring) * .008f))), 96, 1.f);
             }
             for (int i = 0; i < 12; ++i) {
                 const float angle = t * .12f + i * (IM_PI * 2.f / 12.f);
                 const float radius = 125.f + (i % 3) * 13.f;
                 draw->AddCircleFilled(origin + ImVec2(165 + cosf(angle) * radius, 265 + sinf(angle) * radius),
-                    i % 3 == 0 ? 2.f : 1.f, ImGui::GetColorU32(ImVec4(1.f, .83f, .15f, .35f)), 12);
+                    i % 3 == 0 ? 2.f : 1.f, ImGui::GetColorU32(A(ImVec4(1.f, .83f, .15f, .35f))), 12);
             }
-            if (g_Variables.Logo) {
+            if (g_Variables.Logo && loginAlpha > 0.01f) {
                 draw->AddImageRounded(g_Variables.Logo, origin + ImVec2(65, 165 + drift),
                     origin + ImVec2(265, 365 + drift), ImVec2(0, 0), ImVec2(1, 1),
-                    ImGui::GetColorU32(ImVec4(1, 1, 1, 1)), 24.f);
+                    ImGui::GetColorU32(A(ImVec4(1, 1, 1, 1))), 24.f);
             }
             draw->PopClipRect();
             ImFont* brand = UI::SafeFont(g_Variables.m_FontSecundary);
-            draw->AddText(brand, 30.f, origin + ImVec2(32, 32), ImGui::GetColorU32(UI::Text()), "ASTRA");
-            draw->AddText(origin + ImVec2(33, 73), ImGui::GetColorU32(UI::Accent()), "SEU ESPACO. SEU CONTROLE.");
-            draw->AddLine(origin + ImVec2(32, 418), origin + ImVec2(298, 418), ImGui::GetColorU32(UI::Border()));
-            draw->AddText(brand, 22.f, origin + ImVec2(32, 440), ImGui::GetColorU32(UI::Text()), "Tudo comeca aqui.");
-            draw->AddText(origin + ImVec2(32, 475), ImGui::GetColorU32(UI::TextDim()), "Um painel feito para voce.");
+            draw->AddText(brand, 30.f, origin + ImVec2(32, 32), ImGui::GetColorU32(A(UI::Text())), "ASTRA");
+            draw->AddText(origin + ImVec2(33, 73), ImGui::GetColorU32(A(UI::Accent())), "SEU ESPACO. SEU CONTROLE.");
+            if (panelHeight >= 520.f) {
+            draw->AddLine(origin + ImVec2(32, 418), origin + ImVec2(298, 418), ImGui::GetColorU32(A(UI::Border())));
+            draw->AddText(brand, 22.f, origin + ImVec2(32, 440), ImGui::GetColorU32(A(UI::Text())), "Tudo comeca aqui.");
+            draw->AddText(origin + ImVec2(32, 475), ImGui::GetColorU32(A(UI::TextDim())), "Um painel feito para voce.");
 
-            // Painel direito
-            const float left = 374.f, width = 402.f;
-            draw->AddRectFilled(origin + ImVec2(354, 28), origin + ImVec2(796, 516), ImGui::GetColorU32(UI::Surface()), 16.f);
-            draw->AddRect(origin + ImVec2(354, 28), origin + ImVec2(796, 516), ImGui::GetColorU32(UI::BorderSoft()), 16.f);
+            }
+            }
+            // Preserve the two-column card; use a single column on narrow viewports.
+            const float cardLeft = showBrand ? 354.f : 20.f;
+            const float cardRight = g_MenuInfo.MenuSize.x - 24.f;
+            const float left = cardLeft + 20.f;
+            draw->AddRectFilled(origin + ImVec2(cardLeft, 28), origin + ImVec2(cardRight, panelHeight - 24.f),
+                ImGui::GetColorU32(UI::Surface()), 16.f);
+            draw->AddRect(origin + ImVec2(cardLeft, 28), origin + ImVec2(cardRight, panelHeight - 24.f),
+                ImGui::GetColorU32(UI::BorderSoft()), 16.f);
+            const bool registering = g_Auth.page == AuthPage::Register;
+            ImFont* headingFont = UI::SafeFont(g_Variables.m_FontSecundary);
+            const char* heading = registering ? "Create Account" : "Welcome back";
+            const float headingWidth = headingFont->CalcTextSizeA(28.f, FLT_MAX, 0.f, heading).x;
+            const float headingSize = ImMin(28.f, 28.f * ImMax(80.f, cardRight - left - 58.f) / headingWidth);
+            draw->AddText(headingFont, headingSize, origin + ImVec2(left, 44.f), ImGui::GetColorU32(UI::Text()), heading);
+            draw->AddText(origin + ImVec2(left, 80.f), ImGui::GetColorU32(UI::Accent()), "ASTRA");
+            draw->AddText(ImGui::GetFont(), ImGui::GetFontSize(), origin + ImVec2(left, 100.f),
+                ImGui::GetColorU32(UI::TextDim()), registering ? "A license key is required to register." :
+                "Sign in to your account to continue.", nullptr, cardRight - left - 20.f);
 
-            LoginUI::Render(draw, origin, left, width);
+            ImGui::SetCursorPos(ImVec2(cardRight - 40.f, 40.f));
+            if (LoginUI::AnimatedButton("X##close_login", ImVec2(28.f, 28.f))) {
+                LoginUI::ClearSensitive();
+                Gui::CloseRequested = true;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Fechar ASTRA");
 
-            ImGui::SetCursorPos(ImVec2(left, 496.f));
-            ImGui::Checkbox("Menos animacoes", &UI::ReduceMotion);
-            ImGui::SameLine(0, 30.f);
-            ImGui::TextColored(UI::TextDim(), "ASTRA %s",
-                g_Variables.version.empty() ? "v1.0" : g_Variables.version.c_str());
+            ImGui::SetCursorPos(ImVec2(cardLeft + 12.f, 140.f));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 8.f));
+            if (ImGui::BeginChild("##auth_form", ImVec2(cardRight - cardLeft - 24.f, panelHeight - 172.f),
+                false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+                const float width = ImGui::GetContentRegionAvail().x;
+                LoginUI::Render(ImGui::GetWindowDrawList(), ImGui::GetWindowPos(), ImGui::GetCursorPosX(), width);
+            }
+            ImGui::EndChild();
+            ImGui::PopStyleVar();
+
 		}
 
 			NotifyManager::Render();

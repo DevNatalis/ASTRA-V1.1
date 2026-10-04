@@ -15,3 +15,11 @@ Veja `tests/AUTH_SECURITY.md` para as mudancas, testes e limitacoes. A configura
 ## Conteudo excluido
 
 Backups, recuperacoes, variantes antigas, caches do Visual Studio, pacotes NuGet restauraveis, executaveis e saidas de compilacao nao fazem parte desta copia. Os arquivos originais no workspace foram preservados.
+
+
+
+
+
+
+
+
