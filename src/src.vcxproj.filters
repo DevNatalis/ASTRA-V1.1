@@ -1,0 +1,371 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Auth" />
+    <Filter Include="Bypass" />
+    <Filter Include="Bypass\Manipulation" />
+    <Filter Include="Core" />
+    <Filter Include="Core\Features" />
+    <Filter Include="Core\Features\Exploits" />
+    <Filter Include="Core\SDK" />
+    <Filter Include="Core\SDK\Network" />
+    <Filter Include="Core\SDK\Structs" />
+    <Filter Include="Core\Threads" />
+    <Filter Include="curl" />
+    <Filter Include="Gui" />
+    <Filter Include="Gui\Custom" />
+    <Filter Include="Gui\Overlay" />
+    <Filter Include="Gui\pages" />
+    <Filter Include="Includes" />
+    <Filter Include="Includes\CustomWidgets" />
+    <Filter Include="Includes\ImGui" />
+    <Filter Include="Includes\ImGui\Awesome" />
+    <Filter Include="Includes\ImGui\Files" />
+    <Filter Include="Raiz" />
+    <Filter Include="Others" />
+    <Filter Include="Others\Security" />
+    <Filter Include="Security" />
+    <Filter Include="Security\Api" />
+    <Filter Include="Security\Api\structs" />
+    <Filter Include="Utils" />
+    <Filter Include="Utils\Memory" />
+    <Filter Include="Includes\ImGui\Files\freetype" />
+    <Filter Include="Includes\ImGui\Files\freetype\win64" />
+    <Filter Include="Security\Api\curl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Auth\lazyimporter.hpp">
+      <Filter>Auth</Filter>
+    </ClInclude>
+    <ClInclude Include="Bypass\Manipulation\Bypass.hpp">
+      <Filter>Bypass\Manipulation</Filter>
+    </ClInclude>
+    <ClInclude Include="Bypass\Manipulation\reg.h">
+      <Filter>Bypass\Manipulation</Filter>
+    </ClInclude>
+    <ClInclude Include="Bypass\Manipulation\task.hpp">
+      <Filter>Bypass\Manipulation</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Config.hpp">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Core.hpp">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Aimbot.hpp">
+      <Filter>Core\Features</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Esp.hpp">
+      <Filter>Core\Features</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Exploits\Exploits.hpp">
+      <Filter>Core\Features\Exploits</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Exploits\GiveWeapon.hpp">
+      <Filter>Core\Features\Exploits</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\SilentAim.hpp">
+      <Filter>Core\Features</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Triggerbot.hpp">
+      <Filter>Core\Features</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Offsets.hpp">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SDK\Memory.hpp">
+      <Filter>Core\SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SDK\Network\CNetObject.h">
+      <Filter>Core\SDK\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SDK\Network\CNetwork.h">
+      <Filter>Core\SDK\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SDK\SDK.hpp">
+      <Filter>Core\SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SDK\Structs\GameClasses.hpp">
+      <Filter>Core\SDK\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SDK\Structs\Structs.hpp">
+      <Filter>Core\SDK\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\EntityList.hpp">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Exploits\ResourceList.hpp">
+      <Filter>Core\Features\Exploits</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\ScreenResolution.hpp">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\UpdateNames.hpp">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\UpdatePointers.hpp">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\VehicleList.hpp">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\curl.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\curlver.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\easy.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\header.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\mprintf.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\multi.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\options.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\stdcheaders.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\system.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\typecheck-gcc.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\urlapi.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="curl\websockets.h">
+      <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Custom\Custom.hpp">
+      <Filter>Gui\Custom</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Gui.hpp">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Overlay\Overlay.hpp">
+      <Filter>Gui\Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\pages\Combat.hpp">
+      <Filter>Gui\pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Exploits.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Local.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Auth\auth_manager.hpp">
+      <Filter>Auth</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Login.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Settings.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Vehicless.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Visuals.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\VisualsVehicles.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Weapons.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\World.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Theme.hpp">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\CustomWidgets\Custom.hpp">
+      <Filter>Includes\CustomWidgets</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\CustomWidgets\EspPreview.hpp">
+      <Filter>Includes\CustomWidgets</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\CustomWidgets\Notify.hpp">
+      <Filter>Includes\CustomWidgets</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\CustomWidgets\Preview.hpp">
+      <Filter>Includes\CustomWidgets</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\CustomWidgets\WaterMarks.hpp">
+      <Filter>Includes\CustomWidgets</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Awesome\font_awesome.h">
+      <Filter>Includes\ImGui\Awesome</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imconfig.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imgui.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imgui_edited.hpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imgui_freetype.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imgui_impl_dx11.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imgui_impl_win32.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imgui_internal.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imstb_rectpack.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imstb_textedit.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\imstb_truetype.h">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Files\menu_settings.hpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\ImGui\Fonts.hpp">
+      <Filter>Includes\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Includes.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.hpp">
+      <Filter>Raiz</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\skstr.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\Utils.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\MagicBullets.hpp">
+      <Filter>Core\Features</Filter>
+    </ClInclude>
+    <ClInclude Include="Others\Security\xorstr.hpp">
+      <Filter>Others\Security</Filter>
+    </ClInclude>
+    <ClInclude Include="Security\AntiCrack.hpp">
+      <Filter>Security</Filter>
+    </ClInclude>
+    <ClInclude Include="Security\Api\api.hpp">
+      <Filter>Security\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="Security\Api\json.hpp">
+      <Filter>Security\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="Security\Api\structs\structs.hpp">
+      <Filter>Security\Api\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Security\xorstr.hpp">
+      <Filter>Security</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Memory\Memory.hpp">
+      <Filter>Utils\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Utils.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClCompile Include="Bypass\Manipulation\Bypass.cpp">
+      <Filter>Bypass\Manipulation</Filter>
+    </ClCompile>
+    <ClCompile Include="Bypass\Manipulation\reg.cpp">
+      <Filter>Bypass\Manipulation</Filter>
+    </ClCompile>
+    <ClCompile Include="Bypass\Manipulation\task.cpp">
+      <Filter>Bypass\Manipulation</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Features\Aimbot.cpp">
+      <Filter>Core\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Features\Esp.cpp">
+      <Filter>Core\Features</Filter>
+    </ClCompile>
+    <ClInclude Include="Core\Features\Exploits\HandlingEditor.hpp">
+      <Filter>Core\Features\Exploits</Filter>
+    </ClInclude>
+    <ClCompile Include="Core\Features\SilentAim.cpp">
+      <Filter>Core\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Features\Triggerbot.cpp">
+      <Filter>Core\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\SDK\Memory.cpp">
+      <Filter>Core\SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\SDK\Network\CNetObject.cpp">
+      <Filter>Core\SDK\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\SDK\Network\CNetwork.cpp">
+      <Filter>Core\SDK\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Gui\Gui.cpp">
+      <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="Gui\Overlay\Overlay.cpp">
+      <Filter>Gui\Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_demo.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_draw.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_edited.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_freetype.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_impl_dx11.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_impl_win32.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_tables.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\ImGui\Files\imgui_widgets.cpp">
+      <Filter>Includes\ImGui\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Features\MagicBullets.cpp">
+      <Filter>Core\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Includes\Vector3.cpp">
+      <Filter>Includes</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Raiz</Filter>
+    </ClCompile>
+    <Library Include="Includes\ImGui\Files\freetype\win64\freetype.lib">
+      <Filter>Includes\ImGui\Files\freetype\win64</Filter>
+    </Library>
+    <Library Include="Security\Api\curl\libcurl.lib">
+      <Filter>Security\Api\curl</Filter>
+    </Library>
+    <None Include="packages.config">
+      <Filter>Raiz</Filter>
+    </None>
+  </ItemGroup>
+</Project>
