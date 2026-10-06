@@ -272,6 +272,11 @@ namespace ReferenceMenu
             if (Check("Box", &c.ESP->Box) && !c.ESP->Box) c.ESP->FilledBox = false;
             if (Check("Filled Box", &c.ESP->FilledBox) && c.ESP->FilledBox) c.ESP->Box = true;
             ColorRow("Name Color", c.ESP->UserNamesCol);
+            if (c.ESP->UserNames && c.ESP->UserNamesCol.Value.w <= 0.01f) {
+                ImGui::TextUnformatted("Nome transparente");
+                if (ImGui::SmallButton("Restaurar visibilidade"))
+                    c.ESP->UserNamesCol = ImColor(230, 230, 230, 255);
+            }
             ColorRow("Weapon Color", c.ESP->WeaponNameCol);
             ColorRow("Distance Color", c.ESP->DistanceCol);
         }

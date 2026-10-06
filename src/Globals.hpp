@@ -5,7 +5,9 @@
 #include <D3DX11tex.h>
 #include <D3dx9math.h>
 #pragma comment( lib, "d3d11.lib" )
+#ifndef HAS_DXSDK_D3DX
 #pragma comment( lib, "D3DX11.lib" )
+#endif
 
 class CVehicle;
 
@@ -51,8 +53,6 @@ public:
 	std::string id;
 	std::string version;
 
-	bool g_bPassedByThisVerify;
-	uintptr_t g_VerifyLogin;
 	bool done;
 	bool IsOpen;
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <cstdint>
+#include <limits>
 
 struct WildcardByte {
     bool is_wildcard;
@@ -29,11 +30,12 @@ namespace memory {
     }
 
     static uintptr_t find_in_region(HANDLE proc, const MEMORY_BASIC_INFORMATION& region, const std::vector<WildcardByte>& sig) {
-        if (sig.empty()) return 0;
+        if (sig.empty() || region.RegionSize < sig.size()) return 0;
         std::vector<uint8_t> data(region.RegionSize);
         SIZE_T read_count = 0;
         if (!ReadProcessMemory(proc, region.BaseAddress, data.data(), region.RegionSize, &read_count) || read_count == 0) return 0;
         const size_t sig_len = sig.size();
+        if (read_count < sig_len || read_count > data.size()) return 0;
         const size_t max_offset = read_count - sig_len;
         for (size_t pos = 0; pos <= max_offset; ++pos) {
             bool matched = true;
@@ -62,7 +64,11 @@ namespace memory {
                 if (result != 0) return result;
             }
 
-            cursor = reinterpret_cast<uintptr_t>(info.BaseAddress) + info.RegionSize;
+            const uintptr_t regionBase = reinterpret_cast<uintptr_t>(info.BaseAddress);
+            if (info.RegionSize > (std::numeric_limits<uintptr_t>::max)() - regionBase) break;
+            const uintptr_t next = regionBase + info.RegionSize;
+            if (next <= cursor) break;
+            cursor = next;
         }
         
         return 0;

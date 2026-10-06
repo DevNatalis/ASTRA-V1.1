@@ -30,6 +30,8 @@
 #pragma comment(lib, "Crypt32.lib")
 #pragma comment(lib, "Wldap32.lib")
 #pragma comment(lib, "libcurl.lib")
+#pragma comment(lib, "secur32.lib")
+#pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "bcrypt.lib") // CNG: SHA-256 (HWID + integridade da sessao)
 
 // ─── Resultados de autenticação ──────────────────────────────────────────────
@@ -65,6 +67,8 @@ enum class AuthPage
 // ─── Resultado assíncrono ─────────────────────────────────────────────────────
 struct AsyncAuthResult
 {
+    // Single UI consumer. seq_cst publication synchronizes all preceding
+    // result/message writes; CanAttempt prevents reuse until consumption.
     std::atomic<bool> ready{ false };
     AuthResult  result  = AuthResult::UnknownError;
     std::string message;
@@ -388,7 +392,8 @@ public:
     bool IsSessionValid() const
     {
         std::lock_guard<std::mutex> lock(sessionMutex_);
-        if (page != AuthPage::Authenticated) return false;
+        // Worker threads consult only state protected by sessionMutex_.
+        // The UI owns page and updates it outside this mutex.
         if (!session_.armed || session_.revoked) return false;
         std::int64_t now = static_cast<std::int64_t>(time(nullptr));
         if (session_.expiryUnix <= 0 || now >= session_.expiryUnix) return false;
@@ -435,8 +440,8 @@ public:
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // HEARTBEAT (VULN 4): revalida o canal com o servidor a cada ~12min.
-    // - round-trip `init` com timeout de 5s (prova app em pe + canal vivo);
+    // HEARTBEAT: checks the existing API session every ~12 minutes.
+    // - type=check with the authenticated session, timeout 5s;
     // - reforca expiry local emitido pelo servidor;
     // - 3 falhas seguidas => sessao revogada => UI forca re-login.
     // NOTA HONESTA KeyAuth 1.3: nao ha endpoint dedicado de "ban check";
@@ -583,14 +588,14 @@ private:
         CloseHandle(hToken);
 
         auto* tu = reinterpret_cast<PTOKEN_USER>(buf.data());
-        LPWSTR pSid = nullptr;
-        if (!ConvertSidToStringSidW(tu->User.Sid, &pSid))
+        LPSTR pSid = nullptr;
+        if (!ConvertSidToStringSidA(tu->User.Sid, &pSid))
             return "none";
 
         // wstring -> string (ASCII-safe: SID só tem dígitos/hífens)
-        std::wstring ws(pSid);
+        std::string sid(pSid);
         LocalFree(pSid);
-        return std::string(ws.begin(), ws.end());
+        return sid;
     }
 
     // ── SHA-256 via CNG (sem dependencias externas) ──
@@ -647,7 +652,7 @@ private:
         if (sz == 0 || sz > kMax) return {};
         std::vector<BYTE> buf(sz);
         DWORD got = GetSystemFirmwareTable('RSMB', 0, buf.data(), sz);
-        if (got == 0) return {};
+        if (got == 0 || got > sz) return {};
         buf.resize(got);
         return buf;
     }
@@ -666,12 +671,16 @@ private:
         BOOL ok = DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY,
             &q, sizeof(q), out, sizeof(out), &ret, nullptr);
         CloseHandle(h);
-        if (!ok || ret < sizeof(STORAGE_DEVICE_DESCRIPTOR)) return {};
+        if (!ok || ret < sizeof(STORAGE_DEVICE_DESCRIPTOR) || ret > sizeof(out)) return {};
 
         auto* d = reinterpret_cast<STORAGE_DEVICE_DESCRIPTOR*>(out);
         if (d->SerialNumberOffset == 0 || d->SerialNumberOffset >= ret) return {};
 
-        std::string s(reinterpret_cast<char*>(out) + d->SerialNumberOffset);
+        const char* start = reinterpret_cast<char*>(out) + d->SerialNumberOffset;
+        const size_t remaining = ret - d->SerialNumberOffset;
+        const auto* end = static_cast<const char*>(std::memchr(start, '\0', remaining));
+        if (!end) return {};
+        std::string s(start, static_cast<size_t>(end - start));
         // trim: seriais ATA costumam vir com espacos
         size_t a = s.find_first_not_of(" \t\r\n");
         if (a == std::string::npos) return {};
@@ -719,6 +728,8 @@ private:
     // falha ("none") tenta de novo na proxima chamada.
     static std::string GetHwid()
     {
+        static std::mutex cacheMutex;
+        std::lock_guard<std::mutex> lock(cacheMutex);
         static std::string cached;
         if (!cached.empty())
             return cached;
@@ -743,7 +754,9 @@ private:
     //   2. Cole o resultado como "sha256//<base64>" em kPinnedSpki abaixo.
     //   3. Teste: ative o Fiddler (HTTPS decrypt + raiz confiavel) e tente
     //      logar — deve falhar com erro de pin, nunca completar o login.
-    static constexpr const char* kPinnedSpki = "sha256//9CzsMBcyhGA1twclwB9cxPA1hy/G5udlXdrNyGVH3Ww=";
+    // Pin refreshed 2026-10-05: leaf CN=keyauth.win issued by Let's Encrypt YE2,
+    // expires 2027-01-02. Previous pin no longer matched any cert in the live chain.
+    static constexpr const char* kPinnedSpki = "sha256//Uph03/nw3T0tdWja1iU6bxYUBryw4jzeFdyeSuVRMEs=";
     // ^^^ SETUP OBRIGATORIO (uma vez): sem o pin real o cliente falha
     // fechado (fail closed) — ver PinLooksConfigured. Nao envie release assim.
 
@@ -769,22 +782,29 @@ private:
         struct curl_slist* headers = nullptr;
         headers = curl_slist_append(headers, xorstr("Content-Type: application/x-www-form-urlencoded"));
 
+        bool configured = headers != nullptr;
         std::string url = AuthSecrets::Url(); // curl copia a string; temporario e seguro
-        curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, xorstr("POST"));
-        curl_easy_setopt(hnd, CURLOPT_URL,           url.c_str());
-        curl_easy_setopt(hnd, CURLOPT_HTTPHEADER,    headers);
-        curl_easy_setopt(hnd, CURLOPT_POSTFIELDS,    postfields.c_str());
-        curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(hnd, CURLOPT_WRITEDATA,     &response);
-        curl_easy_setopt(hnd, CURLOPT_TIMEOUT,       timeoutSec);
-        curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT, timeoutSec < 5L ? timeoutSec : 5L);
-        curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 2L);
-        curl_easy_setopt(hnd, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
-        curl_easy_setopt(hnd, CURLOPT_REDIR_PROTOCOLS, 0L);
-        curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 0L);
-        curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 1L); // NUNCA desabilitar SSL
+        configured = (curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, xorstr("POST")) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_URL,           url.c_str()) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_HTTPHEADER,    headers) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_POSTFIELDS,    postfields.c_str()) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, WriteCallback) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_WRITEDATA,     &response) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_TIMEOUT,       timeoutSec) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT, timeoutSec < 5L ? timeoutSec : 5L) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 2L) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_PROTOCOLS_STR, "https") == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_REDIR_PROTOCOLS_STR, "https") == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 0L) == CURLE_OK) && configured;
+        configured = (curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 1L) == CURLE_OK) && configured; // NUNCA desabilitar SSL
         // Pin da chave publica do keyauth.win: rejeita MITM com raiz instalada.
-        curl_easy_setopt(hnd, CURLOPT_PINNEDPUBLICKEY, kPinnedSpki);
+        configured = (curl_easy_setopt(hnd, CURLOPT_PINNEDPUBLICKEY, kPinnedSpki) == CURLE_OK) && configured;
+
+        if (!configured) {
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(hnd);
+            return xorstr("connection_failed");
+        }
 
         CURLcode ret = curl_easy_perform(hnd);
         long status = 0;
@@ -803,7 +823,7 @@ private:
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
     {
         constexpr size_t limit = 256 * 1024;
-        if (!userp || (size && nmemb > limit / size)) return 0;
+        if (!userp || !contents || !size || nmemb > limit / size) return 0;
         const size_t bytes = size * nmemb;
         auto& response = *static_cast<std::string*>(userp);
         if (response.size() > limit || bytes > limit - response.size()) return 0;
@@ -925,6 +945,13 @@ private:
         for (char& c : text)
             if (static_cast<unsigned char>(c) < 32) c = ' ';
         return text.empty() ? "Authentication server rejected the request." : text;
+    }
+
+    std::string BuildCheckFields() const
+    {
+        return std::string("type=check&sessionid=") + AuthPolicy::FormEncode(SessionId()) +
+               "&name=" + AuthPolicy::FormEncode(AuthSecrets::Name()) +
+               "&ownerid=" + AuthPolicy::FormEncode(AuthSecrets::Owner());
     }
 
     static AuthResult ClassifyMessage(const std::string& message)
@@ -1084,12 +1111,16 @@ private:
                 }
             }
 
-            std::string resp = PerformRequest(BuildInitFields(), kHbTimeoutSec);
+            std::string resp = PerformRequest(BuildCheckFields(), kHbTimeoutSec);
             bool alive = false;
+            bool rejected = false;
             try
             {
                 auto j = nlohmann::json::parse(resp);
-                alive = j.value(xorstr("success"), false);
+                if (j.is_object() && j.contains("success") && j.at("success").is_boolean()) {
+                    alive = j.at("success").get<bool>();
+                    rejected = !alive;
+                }
             }
             catch (...) { alive = false; }
 
@@ -1101,7 +1132,7 @@ private:
                     session_.hbFails = 0;
                     session_.lastHeartbeat = static_cast<std::int64_t>(time(nullptr));
                 }
-                else if (++session_.hbFails >= kHbMaxFails)
+                else if (rejected || ++session_.hbFails >= kHbMaxFails)
                 {
                     session_.revoked = true; // proximo RequireAuth derruba
                 }

@@ -15,7 +15,9 @@
 #include <D3DX11tex.h>
 #include <D3dx9math.h>
 #pragma comment( lib, "d3d11.lib" )
+#ifndef HAS_DXSDK_D3DX
 #pragma comment( lib, "D3DX11.lib" )
+#endif
 
 namespace Core {
 

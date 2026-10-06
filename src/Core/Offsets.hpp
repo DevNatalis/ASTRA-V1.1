@@ -53,7 +53,7 @@ namespace Core {
             m_CObject,
             m_NoRagDoll,
             m_CWeapon,
-            m_PlayerId,
+            m_PlayerId, m_CPedNetId,
             m_CitizenNamesModBase,
             m_NetIdToNamesEntry,
             m_SeatBealt,

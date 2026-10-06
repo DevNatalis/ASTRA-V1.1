@@ -487,7 +487,7 @@ namespace Custom {
 
 	inline void EndCustomChild()
 	{
-		if (GetCurrentWindow()->ScrollbarY > 0)
+		if (GetCurrentWindow()->ScrollbarY)
 			SetCursorPosY(GetCursorPosY() + 10);
 
 		EndGroup();

@@ -13875,15 +13875,32 @@ static const char* GetClipboardTextFn_DefaultImpl(void* user_data_ctx)
 		::CloseClipboard();
 		return NULL;
 	}
+	const SIZE_T capacity = ::GlobalSize(wbuf_handle);
+	if (capacity < sizeof(WCHAR) || capacity > 1024 * 1024 || capacity % sizeof(WCHAR))
+	{
+		::CloseClipboard();
+		return NULL;
+	}
 	if (const WCHAR* wbuf_global = (const WCHAR*)::GlobalLock(wbuf_handle))
 	{
-		int buf_len = ::WideCharToMultiByte(CP_UTF8, 0, wbuf_global, -1, NULL, 0, NULL, NULL);
-		g.ClipboardHandlerData.resize(buf_len);
-		::WideCharToMultiByte(CP_UTF8, 0, wbuf_global, -1, g.ClipboardHandlerData.Data, buf_len, NULL, NULL);
+		SIZE_T length = 0;
+		const SIZE_T count = capacity / sizeof(WCHAR);
+		while (length < count && wbuf_global[length] != L'\0') ++length;
+		if (length < count)
+		{
+			const int chars = static_cast<int>(length + 1);
+			int buf_len = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wbuf_global, chars, NULL, 0, NULL, NULL);
+			if (buf_len > 0)
+			{
+				g.ClipboardHandlerData.resize(buf_len);
+				if (!::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wbuf_global, chars, g.ClipboardHandlerData.Data, buf_len, NULL, NULL))
+					g.ClipboardHandlerData.clear();
+			}
+		}
+		::GlobalUnlock(wbuf_handle);
 	}
-	::GlobalUnlock(wbuf_handle);
 	::CloseClipboard();
-	return g.ClipboardHandlerData.Data;
+	return g.ClipboardHandlerData.empty() ? NULL : g.ClipboardHandlerData.Data;
 }
 
 static void SetClipboardTextFn_DefaultImpl(void*, const char* text)
@@ -13898,10 +13915,15 @@ static void SetClipboardTextFn_DefaultImpl(void*, const char* text)
 		return;
 	}
 	WCHAR* wbuf_global = (WCHAR*)::GlobalLock(wbuf_handle);
-	::MultiByteToWideChar(CP_UTF8, 0, text, -1, wbuf_global, wbuf_length);
+	if (!wbuf_global)
+	{
+		::GlobalFree(wbuf_handle);
+		::CloseClipboard();
+		return;
+	}
+	const int converted = ::MultiByteToWideChar(CP_UTF8, 0, text, -1, wbuf_global, wbuf_length);
 	::GlobalUnlock(wbuf_handle);
-	::EmptyClipboard();
-	if (::SetClipboardData(CF_UNICODETEXT, wbuf_handle) == NULL)
+	if (!converted || !::EmptyClipboard() || ::SetClipboardData(CF_UNICODETEXT, wbuf_handle) == NULL)
 		::GlobalFree(wbuf_handle);
 	::CloseClipboard();
 }

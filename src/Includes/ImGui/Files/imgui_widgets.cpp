@@ -149,7 +149,6 @@ static ImVec2           InputTextCalcTextSizeW(ImGuiContext* ctx, const ImWchar*
 #include <map>
 #include <string>
 #include <globals.hpp>
-#include <includes/ImGui/Awesome/font_awesome.h>
 
 void ImGui::TextEx(const char* text, const char* text_end, ImGuiTextFlags flags)
 {
@@ -1918,8 +1917,8 @@ bool ImGui::BeginComboPopupp(ImGuiID popup_id, const ImRect& bb, ImGuiComboFlags
 void ImGui::EndCombo()
 {
 	ImGuiWindow* window = GetCurrentWindow();
-	window->DrawList->AddRectFilledMultiColor(window->Pos + ImVec2(5, 0), window->Pos + ImVec2(window->Size.x - (window->ScrollbarY ? 16 : 5), 5), GetColorU32(ImVec4(ImColor(16, 16, 18))), GetColorU32(ImVec4(ImColor(16, 16, 18))), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f));
-	window->DrawList->AddRectFilledMultiColor(window->Pos + ImVec2(5, window->Size.y - 5), window->Pos + window->Size - ImVec2((window->ScrollbarY ? 16 : 5), 0), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18))), GetColorU32(ImVec4(ImColor(16, 16, 18))));
+	window->DrawList->AddRectFilledMultiColor(window->Pos + ImVec2(5.f, 0.f), window->Pos + ImVec2(window->Size.x - (window->ScrollbarY ? 16.f : 5.f), 5.f), GetColorU32(ImVec4(ImColor(16, 16, 18))), GetColorU32(ImVec4(ImColor(16, 16, 18))), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f));
+	window->DrawList->AddRectFilledMultiColor(window->Pos + ImVec2(5.f, window->Size.y - 5.f), window->Pos + window->Size - ImVec2((window->ScrollbarY ? 16.f : 5.f), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18)), 0.f), GetColorU32(ImVec4(ImColor(16, 16, 18))), GetColorU32(ImVec4(ImColor(16, 16, 18))));
 
 	End();
 }
@@ -5545,14 +5544,14 @@ bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flag
 
 		it_anim->second.alpha = ImClamp(it_anim->second.alpha + (6.f * g.IO.DeltaTime * (it_anim->second.active && g_MenuInfo.IsOpen ? 1.f : -1.f)), 0.f, 1.f);
 
-		SetNextWindowSize(ImVec2(180, flags & ImGuiColorEditFlags_AlphaBar ? 175 : 155));
-		SetNextWindowPos(g.LastItemData.Rect.GetTR() + ImVec2(8, 4));
+		SetNextWindowSize(ImVec2(180.f, flags & ImGuiColorEditFlags_AlphaBar ? 175.f : 155.f));
+		SetNextWindowPos(g.LastItemData.Rect.GetTR() + ImVec2(8.f, 4.f));
 		PushStyleVar(ImGuiStyleVar_Alpha, it_anim->second.alpha);
 		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		PushStyleVar(ImGuiStyleVar_WindowRounding, 4.f);
 		PushStyleColor(ImGuiCol_WindowBg, GetColorU32(g_Col.ChildBorderCol));
 
-		if (it_anim->second.alpha >= 0.01f);
+		if (it_anim->second.alpha >= 0.01f)
 		{
 			Begin(window_name.c_str(), NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysUseWindowPadding);
 			{

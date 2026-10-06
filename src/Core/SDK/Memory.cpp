@@ -1,5 +1,6 @@
 #include "Memory.hpp"
 #include <filesystem>
+#include <limits>
 #include <winternl.h>
 #include <Auth/lazyimporter.hpp>
 #include <Globals.hpp>
@@ -10,7 +11,7 @@ namespace Core {
 	{
 		uintptr_t Address = FindSignature(Pattern);
 
-		if (InstructionLength != 0)
+		if (Address && InstructionLength >= 4)
 		{
 			Address = ResolveRelativeAddress(Address, InstructionLength);
 		}
@@ -21,6 +22,7 @@ namespace Core {
 	uintptr_t MemoryClass::FindSignature(std::vector<uint8_t> Signature, uintptr_t ModuleBase, uintptr_t ModuleBaseSize)
 	{
 		const size_t blockSize = (4096 * 4);
+		if (Signature.empty() || Signature.size() > blockSize) return 0;
 		std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(blockSize);
 
 		DWORD oldProtect;
@@ -38,32 +40,40 @@ namespace Core {
 			ModulBaseSize = ModBaseSize;
 		}
 
-		for (uintptr_t address = ModulBase; address < ModulBase + ModulBaseSize; address += blockSize)
+		if (!ModulBase || ModulBaseSize > (std::numeric_limits<uintptr_t>::max)() - ModulBase) return 0;
+		const uintptr_t end = ModulBase + ModulBaseSize;
+		for (uintptr_t address = ModulBase; address < end; )
 		{
-			if (!VirtualProtectEx(ProcHandle, (LPVOID)address, blockSize, PAGE_EXECUTE_READWRITE, &oldProtect)) { continue; }
+			const SIZE_T readSize = (std::min)(static_cast<uintptr_t>(blockSize), end - address);
+			const uintptr_t next = address + (std::min)(static_cast<uintptr_t>(blockSize - signatureSize + 1), end - address);
+			if (!VirtualProtectEx(ProcHandle, (LPVOID)address, readSize, PAGE_EXECUTE_READWRITE, &oldProtect)) { address = next; continue; }
 
-			SIZE_T bytesRead;
-			if (!ReadProcessMemory(ProcHandle, (void*)address, data.get(), blockSize, &bytesRead)) {
-				VirtualProtectEx(ProcHandle, (LPVOID)address, blockSize, oldProtect, NULL);
+			SIZE_T bytesRead = 0;
+			DWORD ignoredProtect = 0;
+			const BOOL readOk = ReadProcessMemory(ProcHandle, (void*)address, data.get(), readSize, &bytesRead);
+			const BOOL restored = VirtualProtectEx(ProcHandle, (LPVOID)address, readSize, oldProtect, &ignoredProtect);
+			if (!restored) return 0;
+			if (!readOk || bytesRead < signatureSize || bytesRead > readSize) {
+				address = next;
 				continue;
 			}
 
-			VirtualProtectEx(ProcHandle, (LPVOID)address, blockSize, oldProtect, NULL);
-
-			for (uintptr_t i = 0; i < bytesRead; i++)
+			for (size_t i = 0; i <= bytesRead - signatureSize; ++i)
 			{
+				bool matched = true;
 				for (uintptr_t j = 0; j < signatureSize; j++)
 				{
 					if (Signature[j] == 0x00)
 						continue;
 
-					if (data[i + j] != Signature[j])
+					if (data[i + j] != Signature[j]) {
+						matched = false;
 						break;
-
-					if (j == signatureSize - 1)
-						return (address + i);
+					}
 				}
+				if (matched) return address + i;
 			}
+			address = next;
 		}
 
 		return 0x0;
@@ -72,9 +82,9 @@ namespace Core {
 	uintptr_t MemoryClass::FindSignatureBypass(std::vector<uint8_t> Signature, uintptr_t ModuleBase, uintptr_t ModuleBaseSize)
 	{
 		const size_t blockSize = (4096 * 4);
+		if (Signature.empty() || Signature.size() > blockSize) return 0;
 		std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(blockSize);
 
-		DWORD oldProtect;
 		size_t signatureSize = Signature.size();
 
 		uintptr_t ModulBase;
@@ -89,32 +99,35 @@ namespace Core {
 			ModulBaseSize = ModBaseSize;
 		}
 
-		for (uintptr_t address = ModulBase; address < ModulBase + ModulBaseSize; address += blockSize)
+		if (!ModulBase || ModulBaseSize > (std::numeric_limits<uintptr_t>::max)() - ModulBase) return 0;
+		const uintptr_t end = ModulBase + ModulBaseSize;
+		for (uintptr_t address = ModulBase; address < end; )
 		{
-			//if (!VirtualProtectEx(ProcHandle, (LPVOID)address, blockSize, PAGE_EXECUTE_READWRITE, &oldProtect)) { continue; }
-
-			SIZE_T bytesRead;
-			if (!ReadProcessMemory(ProcHandle, (void*)address, data.get(), blockSize, &bytesRead)) {
-				//VirtualProtectEx(ProcHandle, (LPVOID)address, blockSize, oldProtect, NULL);
+			const SIZE_T readSize = (std::min)(static_cast<uintptr_t>(blockSize), end - address);
+			const uintptr_t next = address + (std::min)(static_cast<uintptr_t>(blockSize - signatureSize + 1), end - address);
+			SIZE_T bytesRead = 0;
+			if (!ReadProcessMemory(ProcHandle, (void*)address, data.get(), readSize, &bytesRead) ||
+				bytesRead < signatureSize || bytesRead > readSize) {
+				address = next;
 				continue;
 			}
 
-			//VirtualProtectEx(ProcHandle, (LPVOID)address, blockSize, oldProtect, NULL);
-
-			for (uintptr_t i = 0; i < bytesRead; i++)
+			for (size_t i = 0; i <= bytesRead - signatureSize; ++i)
 			{
+				bool matched = true;
 				for (uintptr_t j = 0; j < signatureSize; j++)
 				{
 					if (Signature[j] == 0x00)
 						continue;
 
-					if (data[i + j] != Signature[j])
+					if (data[i + j] != Signature[j]) {
+						matched = false;
 						break;
-
-					if (j == signatureSize - 1)
-						return (address + i);
+					}
 				}
+				if (matched) return address + i;
 			}
+			address = next;
 		}
 
 		return 0x0;
@@ -165,7 +178,7 @@ namespace Core {
 			TOKEN_PRIVILEGES* privilages = new TOKEN_PRIVILEGES[100];
 			if (GetTokenInformation(h_Token, TokenPrivileges, privilages, sizeof(TOKEN_PRIVILEGES) * 100, &dw_TokenLength))
 			{
-				for (int i = 0; i < privilages->PrivilegeCount; i++)
+				for (DWORD i = 0; i < privilages->PrivilegeCount; ++i)
 				{
 					privilages->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
 				}

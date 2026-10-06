@@ -7,7 +7,7 @@ namespace menu_settings
 {
 	inline int tab_count = 0;
 	inline float tab_alpha = 0.f;
-	inline int active_tab = 0.f;
+	inline int active_tab = 0;
 	inline float tab_add = 0.f;
 	inline float line_offset = 0.f;
 }

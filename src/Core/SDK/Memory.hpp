@@ -125,8 +125,9 @@ namespace Core {
 					result.push_back(0x00);
 				}
 				else {
-					uint8_t value = std::stoul(token, nullptr, 16);
-					result.push_back(value);
+					const auto value = std::stoul(token, nullptr, 16);
+					if (value > UINT8_MAX) return {};
+					result.push_back(static_cast<uint8_t>(value));
 				}
 			}
 

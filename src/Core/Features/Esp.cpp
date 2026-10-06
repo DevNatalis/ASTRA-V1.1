@@ -5,6 +5,9 @@
 void Core::Features::cEsp::Draw( )
 {
 	auto Cfg = g_Config.ESP;
+	// The worker swaps and destroys the previous list every refresh. Keep
+	// names and entity fields alive for this entire frame, including Admin ESP.
+	const auto Entities = Core::SDK::Game::GetEntityListSnapshot();
 
 	if ( Cfg->AdminESP )
 	{
@@ -21,7 +24,7 @@ void Core::Features::cEsp::Draw( )
 			D3DXVECTOR3 localPos = localPlayer->GetPos();
 			float localZ = localPos.z;
 
-			for ( auto& Entity : Core::SDK::Game::EntityList )
+			for ( const auto& Entity : Entities )
 			{
 				CPed* Ped = Entity.Ped;
 				if ( !Ped || Ped == localPlayer )
@@ -126,7 +129,7 @@ void Core::Features::cEsp::Draw( )
 
 	static std::unordered_map<CPed *, Core::SDK::Game::EspAnim> vEspAnimations;
 
-	for ( auto & Entity : Core::SDK::Game::EntityList )
+	for ( const auto & Entity : Entities )
 	{
 		CPed * Ped = Entity.Ped;
 		auto DrawList = ImGui::GetBackgroundDrawList( );
@@ -547,9 +550,10 @@ void Core::Features::cEsp::Draw( )
 		if ( Cfg->UserNames && !Entity.NetworkInfo.UserName.empty( ) )
 		{
 
-			std::string PlayerName = Entity.NetworkInfo.UserName;
-
-			ImVec2 TextSize = g_Variables.m_DrawFont->CalcTextSizeA( g_Variables.m_DrawFont->FontSize, FLT_MAX, 0.0f, PlayerName.c_str( ) );
+			const std::string& PlayerName = Entity.NetworkInfo.UserName;
+			ImFont* NameFont = g_Variables.m_DrawFont ? g_Variables.m_DrawFont : ImGui::GetFont();
+			const float NameFontSize = NameFont->FontSize;
+			ImVec2 TextSize = NameFont->CalcTextSizeA( NameFontSize, FLT_MAX, 0.0f, PlayerName.c_str( ) );
 			ImVec2 TextPos = ImVec2( BoxCenter.x - ( TextSize.x / 2 ), FirstTextBoxTop );
 
 			switch ( Cfg->UserNamesState )
@@ -566,13 +570,16 @@ void Core::Features::cEsp::Draw( )
 				break;
 			}
 
-			/*DrawList->AddText( g_Variables.m_DrawFont, g_Variables.m_DrawFont->FontSize, ImVec2( TextPos.x + 1, TextPos.y + 1 ), ImColor( 0, 0, 0, 100 ), PlayerName.c_str( ) );
-			DrawList->AddText( g_Variables.m_DrawFont, g_Variables.m_DrawFont->FontSize, ImVec2( TextPos.x - 1, TextPos.y + 1 ), ImColor( 0, 0, 0, 100 ), PlayerName.c_str( ) );
-			DrawList->AddText( g_Variables.m_DrawFont, g_Variables.m_DrawFont->FontSize, ImVec2( TextPos.x + 1, TextPos.y - 1 ), ImColor( 0, 0, 0, 100 ), PlayerName.c_str( ) );
-			DrawList->AddText( g_Variables.m_DrawFont, g_Variables.m_DrawFont->FontSize, ImVec2( TextPos.x - 1, TextPos.y - 1 ), ImColor( 0, 0, 0, 100 ), PlayerName.c_str( ) );*/
-
-			DrawList->AddText( ImVec2( TextPos.x + 1, TextPos.y + 1 ), ImColor( 0.f, 0.f, 0.f, Cfg->UserNamesCol.Value.w ), PlayerName.c_str( ) );
-			DrawList->AddText( TextPos, Cfg->UserNamesCol, PlayerName.c_str( ) );
+			// Keep the label inside the viewport when its anchor is near an edge.
+			const ImVec2 ScreenSize = ImGui::GetIO().DisplaySize;
+			TextPos.x = ImClamp(TextPos.x, 0.0f, ImMax(0.0f, ScreenSize.x - TextSize.x));
+			TextPos.y = ImClamp(TextPos.y, 0.0f, ImMax(0.0f, ScreenSize.y - TextSize.y));
+			const ImU32 ShadowColor = ImColor(0.f, 0.f, 0.f, Cfg->UserNamesCol.Value.w);
+			DrawList->AddText(NameFont, NameFontSize, ImVec2(TextPos.x - 1, TextPos.y), ShadowColor, PlayerName.c_str());
+			DrawList->AddText(NameFont, NameFontSize, ImVec2(TextPos.x + 1, TextPos.y), ShadowColor, PlayerName.c_str());
+			DrawList->AddText(NameFont, NameFontSize, ImVec2(TextPos.x, TextPos.y - 1), ShadowColor, PlayerName.c_str());
+			DrawList->AddText(NameFont, NameFontSize, ImVec2(TextPos.x, TextPos.y + 1), ShadowColor, PlayerName.c_str());
+			DrawList->AddText(NameFont, NameFontSize, TextPos, Cfg->UserNamesCol, PlayerName.c_str());
 		}
 
 		const auto DrawHealthBarV = [ &DrawList ] ( ImVec2 pos, ImVec2 dim, ImColor col, int background ) {

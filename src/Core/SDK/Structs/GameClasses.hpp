@@ -1,6 +1,7 @@
 #pragma once
 #include <Vector3.cpp>
 #include "../SDK.hpp"
+#include <Includes/Debug.hpp>
 
 #pragma region Enums
 enum BoneMasks : int { SKEL_ROOT = 0x0, SKEL_Pelvis = 0x2e28, SKEL_L_Thigh = 0xe39f, SKEL_L_Calf = 0xf9bb, SKEL_L_Foot = 0x3779, SKEL_L_Toe0 = 0x83c, IK_L_Foot = 0xfedd, PH_L_Foot = 0xe175, MH_L_Knee = 0xb3fe, SKEL_R_Thigh = 0xca72, SKEL_R_Calf = 0x9000, SKEL_R_Foot = 0xcc4d, SKEL_R_Toe0 = 0x512d, IK_R_Foot = 0x8aae, PH_R_Foot = 0x60e6, MH_R_Knee = 0x3fcf, RB_L_ThighRoll = 0x5c57, RB_R_ThighRoll = 0x192a, SKEL_Spine_Root = 0xe0fd, SKEL_Spine0 = 0x5c01, SKEL_Spine1 = 0x60f0, SKEL_Spine2 = 0x60f1, SKEL_Spine3 = 0x60f2, SKEL_L_Clavicle = 0xfcd9, SKEL_L_UpperArm = 0xb1c5, SKEL_L_Forearm = 0xeeeb, SKEL_L_Hand = 0x49d9, SKEL_L_Finger00 = 0x67f2, SKEL_L_Finger01 = 0xff9, SKEL_L_Finger02 = 0xffa, SKEL_L_Finger10 = 0x67f3, SKEL_L_Finger11 = 0x1049, SKEL_L_Finger12 = 0x104a, SKEL_L_Finger20 = 0x67f4, SKEL_L_Finger21 = 0x1059, SKEL_L_Finger22 = 0x105a, SKEL_L_Finger30 = 0x67f5, SKEL_L_Finger31 = 0x1029, SKEL_L_Finger32 = 0x102a, SKEL_L_Finger40 = 0x67f6, SKEL_L_Finger41 = 0x1039, SKEL_L_Finger42 = 0x103a, PH_L_Hand = 0xeb95, IK_L_Hand = 0x8cbd, RB_L_ForeArmRoll = 0xee4f, RB_L_ArmRoll = 0x1470, MH_L_Elbow = 0x58b7, SKEL_R_Clavicle = 0x29d2, SKEL_R_UpperArm = 0x9d4d, SKEL_R_Forearm = 0x6e5c, SKEL_R_Hand = 0xdead, SKEL_R_Finger00 = 0xe5f2, SKEL_R_Finger01 = 0xfa10, SKEL_R_Finger02 = 0xfa11, SKEL_R_Finger10 = 0xe5f3, SKEL_R_Finger11 = 0xfa60, SKEL_R_Finger12 = 0xfa61, SKEL_R_Finger20 = 0xe5f4, SKEL_R_Finger21 = 0xfa70, SKEL_R_Finger22 = 0xfa71, SKEL_R_Finger30 = 0xe5f5, SKEL_R_Finger31 = 0xfa40, SKEL_R_Finger32 = 0xfa41, SKEL_R_Finger40 = 0xe5f6, SKEL_R_Finger41 = 0xfa50, SKEL_R_Finger42 = 0xfa51, PH_R_Hand = 0x6f06, IK_R_Hand = 0x188e, RB_R_ForeArmRoll = 0xab22, RB_R_ArmRoll = 0x90ff, MH_R_Elbow = 0xbb0, SKEL_Neck_1 = 0x9995, SKEL_Head = 0x796e, IK_Head = 0x322c, FACIAL_facialRoot = 0xfe2c, FB_L_Brow_Out_000 = 0xe3db, FB_L_Lid_Upper_000 = 0xb2b6, FB_L_Eye_000 = 0x62ac, FB_L_CheekBone_000 = 0x542e, FB_L_Lip_Corner_000 = 0x74ac, FB_R_Lid_Upper_000 = 0xaa10, FB_R_Eye_000 = 0x6b52, FB_R_CheekBone_000 = 0x4b88, FB_R_Brow_Out_000 = 0x54c, FB_R_Lip_Corner_000 = 0x2ba6, FB_Brow_Centre_000 = 0x9149, FB_UpperLipRoot_000 = 0x4ed2, FB_UpperLip_000 = 0xf18f, FB_L_Lip_Top_000 = 0x4f37, FB_R_Lip_Top_000 = 0x4537, FB_Jaw_000 = 0xb4a0, FB_LowerLipRoot_000 = 0x4324, FB_LowerLip_000 = 0x508f, FB_L_Lip_Bot_000 = 0xb93b, FB_R_Lip_Bot_000 = 0xc33b, FB_Tongue_000 = 0xb987, RB_Neck_1 = 0x8b93, IK_Root = 0xdd1c };
@@ -19,12 +20,38 @@ class CPlayerInfo {
 public:
 	int PlayerID() {
 		if (!this) { return 0; }
-		return Mem.Read<int>(reinterpret_cast<uintptr_t>(this) + g_Offsets.m_PlayerId);
+		// b3258: checked against the live name map and peer address for 11 players.
+		const uintptr_t idOffset = g_Offsets.CurrentBuild == 3258 ? 0xE8 : g_Offsets.m_PlayerId;
+		return Mem.Read<int>(reinterpret_cast<uintptr_t>(this) + idOffset);
 	}
 
 	std::string GetName() {
 		if (!this) { return ""; }
 		uintptr_t base = reinterpret_cast<uintptr_t>(this);
+
+		// 1) Nome inline (algumas builds guardam char[~32] direto no CPlayerInfo).
+		// 1 RPM por offset (bloco de 40 bytes) — nada de 60+ RPM por ped.
+		static const uintptr_t inlineOffsets[] = { 0xA4, 0xA0, 0x98, 0x90, 0x88, 0x84, 0x80, 0x7C, 0x78, 0x70 };
+		for (uintptr_t off : inlineOffsets) {
+			std::vector<uint8_t> blk = Mem.ReadBytes(base + off, 40);
+			if (blk.size() < 3) continue;
+			size_t len = 0;
+			while (len < blk.size() && blk[len] != 0) {
+				if (blk[len] < 32 || blk[len] > 126) break;
+				len++;
+			}
+			if (len > 1 && len < 32 && len < blk.size() && blk[len] == 0) {
+				std::string s((char*)blk.data(), len);
+				bool numOnly = true;
+				bool hasLetter = false;
+				for (char c : s) {
+					if (c < '0' || c > '9') numOnly = false;
+					if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) hasLetter = true;
+				}
+				if (!numOnly && hasLetter)
+					return s;
+			}
+		}
 
 		static const uintptr_t nameOffsets[] = { 0x7C, 0x80, 0x84, 0x88, 0x78, 0x70, 0x6C, 0x90, 0x94, 0xA0, 0xA8, 0xB0, 0xB8, 0xC0 };
 
@@ -303,10 +330,11 @@ public:
 	}
 
 	int GetID() {
-		if (!this) { return 0; }
-		CPlayerInfo* PlayerInfo = (CPlayerInfo*)GetPlayerInfo();
-		if (!PlayerInfo) { return 0; }
-		return PlayerInfo->PlayerID();
+		if (!this) return 0;
+		CPlayerInfo* info = GetPlayerInfo();
+		if (!info) return 0;
+		const int id = info->PlayerID();
+		return id > 0 && id <= 16777215 ? id : 0;
 	}
 
 	bool HasFlag(ePedConfigFlag Flag)
@@ -402,12 +430,23 @@ public:
 		}
 	}
 
-	void SetGodMode(bool Toggle) {
-		if (!this) { return; }
-
-		uintptr_t Addr = reinterpret_cast<uintptr_t>(this) + 0x188;
-		DWORD flag = Mem.Read<DWORD>(Addr);
-		Mem.Write<DWORD>(Addr, Toggle == true ? flag |= (1 << 9) : flag &= ~(1 << 9));
+	bool SetGodMode(bool Toggle) {
+		if (!this || !Mem.ProcHandle || Mem.ProcHandle == INVALID_HANDLE_VALUE) return false;
+		const uintptr_t address = reinterpret_cast<uintptr_t>(this) + 0x188;
+		DWORD flags = 0;
+		SIZE_T transferred = 0;
+		if (!ReadProcessMemory(Mem.ProcHandle, reinterpret_cast<LPCVOID>(address),
+			&flags, sizeof(flags), &transferred) || transferred != sizeof(flags)) return false;
+		// Bit 8 is invincibility; bit 9 is the ragdoll-preserving variant.
+		// Preserve all unrelated flags and clear either variant when disabled.
+		const DWORD desired = Toggle ? flags | (1u << 8) : flags & ~((1u << 8) | (1u << 9));
+		if (desired == flags) return true;
+		if (!WriteProcessMemory(Mem.ProcHandle, reinterpret_cast<LPVOID>(address),
+			&desired, sizeof(desired), &transferred) || transferred != sizeof(desired)) return false;
+		DWORD actual = 0;
+		return ReadProcessMemory(Mem.ProcHandle, reinterpret_cast<LPCVOID>(address),
+			&actual, sizeof(actual), &transferred) && transferred == sizeof(actual) &&
+			(actual & 0x300u) == (desired & 0x300u);
 	}
 
 	void SetInfStamina(bool Toggle) {
@@ -480,35 +519,125 @@ public:
 		Mem.PatchFunc(g_Offsets.m_LegsKinematics, 5);
 	}
 
+	// Localiza o bitmap de controles desabilitados a partir de uma base
+	// (CPed ou, no fallback, CPlayerInfo). Range de scan +0x1000..+0x1800,
+	// janela de 48 bytes. Gate principal: byte do controle 37 (roda de
+	// arma) setado. Fallback OR: sem o bit 37 (roda ja liberada no momento
+	// do scan), aceita a janela se ao menos 2 dos outros alvos
+	// (157, 158, 24, 25) estiverem setados.
+	static uintptr_t ScanDisabledControlsBitmap(uintptr_t base)
+	{
+		static constexpr uintptr_t kScanStart = 0x1000;
+		static constexpr uintptr_t kScanEnd = 0x1800;
+		static constexpr size_t kBitmapSize = 48;
+		static constexpr uint32_t kKeyControl = 37; // roda de arma
+		static constexpr uint32_t kOthers[] = { 157, 158, 24, 25 };
+
+		if (!base) return 0;
+
+		std::vector<uint8_t> region = Mem.ReadBytes(base + kScanStart, kScanEnd - kScanStart);
+		if (region.size() != kScanEnd - kScanStart) return 0;
+
+		int bestScore = 0;
+		uintptr_t bestOff = 0;
+
+		for (size_t i = 0; i + kBitmapSize <= region.size(); ++i) {
+			const uint8_t* w = region.data() + i;
+
+			const size_t keyByte = kKeyControl / 8;
+			const uint32_t keyBit = kKeyControl % 8;
+			const bool keySet = (w[keyByte] & (1u << keyBit)) != 0;
+
+			int others = 0;
+			for (uint32_t ctrl : kOthers) {
+				const size_t bi = ctrl / 8;
+				const uint32_t bp = ctrl % 8;
+				if (bi < kBitmapSize && (w[bi] & (1u << bp))) others++;
+			}
+			if (!keySet && others < 2) continue;
+
+			const int score = (keySet ? 2 : 0) + others * 2;
+
+			// Filtra ruido: bitmap valido tem poucos bytes nao-zero.
+			int nz = 0;
+			for (size_t k = 0; k < kBitmapSize; ++k) if (w[k]) nz++;
+			if (nz > 20) continue;
+
+			if (score > bestScore) {
+				bestScore = score;
+				bestOff = kScanStart + i;
+			}
+		}
+
+		return (bestScore >= 4) ? (base + bestOff) : 0;
+	}
+
+	// Force weapon wheel (unlock wheel): libera a roda de arma quando o
+	// servidor bloqueia via DisableControlAction. Em vez de patchear a
+	// native, zera os bits 37/157/158/24/25 no bitmap de controles do CPed.
+	// toggle=true faz uma passada de scan+limpeza; toggle=false so invalida
+	// o cache (nada foi patcheado, entao nao ha o que restaurar).
 	void ForceWeaponWheel(bool toggle)
 	{
 		if (!this) return;
 
-		static uintptr_t DisableControlAction = 0;
-		static uintptr_t HideHudComponentThisFrame = 0;
+		// Cache por ped: se o ped mudou (respawn/troca), refaz o scan.
+		static uintptr_t CachedPed = 0;
+		static uintptr_t CachedBitmap = 0;
+		static ULONGLONG MissStart = 0;
 
-		if (DisableControlAction == 0) {
-			DisableControlAction = Mem.FindSignature(
-				{ 0x48, 0x8b, 0x41, 0x00 , 0x83, 0x78, 0x00 , 0x00 , 0x8b, 0x50, 0x00 , 0x8b, 0x08, 0xe9, 0x00 , 0x00 , 0x00 , 0x00 , 0x48, 0x89, 0x5c, 0x24 }
-			);
+		const uintptr_t ped = reinterpret_cast<uintptr_t>(this);
+
+		if (!toggle) {
+			CachedPed = 0;
+			CachedBitmap = 0;
+			MissStart = 0;
+			return;
 		}
 
-		if (HideHudComponentThisFrame == 0) {
-			HideHudComponentThisFrame = Mem.FindSignature(
-				{ 0x48, 0x83, 0xec, 0x00 , 0x48, 0x8b, 0x41, 0x00 , 0x83, 0x38, 0x00 , 0x48, 0x89, 0x6c, 0x24 }
-			);
+		static constexpr size_t kBitmapSize = 48;
+		static constexpr uint32_t kTargets[] = { 37, 157, 158, 24, 25 };
+
+		if (!CachedBitmap || CachedPed != ped) {
+			CachedBitmap = ScanDisabledControlsBitmap(ped);
+			if (!CachedBitmap) {
+				// Fallback final: algumas builds mantêm o bitmap no
+				// CPlayerInfo do ped (b3258: ped + 0x10A8).
+				if (CPlayerInfo* info = GetPlayerInfo())
+					CachedBitmap = ScanDisabledControlsBitmap(reinterpret_cast<uintptr_t>(info));
+			}
+			CachedPed = ped;
+			if (!CachedBitmap) {
+				// Diagnostico: bitmap ausente por mais de 5s -> Warn com
+				// throttle de 5s, para distinguir range errado de outra causa.
+				const ULONGLONG now = GetTickCount64();
+				if (MissStart == 0) MissStart = now;
+				else if (now - MissStart > 5000) {
+					Debug::Warning("ForceWeaponWheel", "bitmap nao localizado em CPed+0x1000..0x1800", 5000);
+					MissStart = now;
+				}
+				return;
+			}
+		}
+		MissStart = 0;
+
+		std::vector<uint8_t> buf = Mem.ReadBytes(CachedBitmap, kBitmapSize);
+		if (buf.size() != kBitmapSize) { CachedBitmap = 0; return; }
+
+		bool changed = false;
+		for (uint32_t ctrl : kTargets) {
+			const size_t bi = ctrl / 8;
+			const uint32_t bp = ctrl % 8;
+			if (bi >= buf.size()) continue;
+			if (buf[bi] & (1u << bp)) {
+				buf[bi] &= static_cast<uint8_t>(~(1u << bp));
+				changed = true;
+			}
 		}
 
-		if (toggle) {
-			Mem.WriteBytes(DisableControlAction, { 0xC3 });
-			Mem.WriteBytes(HideHudComponentThisFrame, { 0xC3 });
-			SetConfigFlag(BlockWeaponSwitching, false);
-		}
-		else {
-			Mem.WriteBytes(DisableControlAction, { 0x48 });
-			Mem.WriteBytes(HideHudComponentThisFrame, { 0x48 });
-			SetConfigFlag(BlockWeaponSwitching, true);
-		}
+		// Cooldown: so escreve se algum bit alvo estava setado.
+		if (changed)
+			Mem.WriteBytes(CachedBitmap, buf);
 	}
 
 	void SuperJump(bool Toggle) {
@@ -716,8 +845,8 @@ public:
 		return Mem.Read<float>((uintptr_t)WeaponInfo + g_Offsets.m_Recoil);
 	}
 
-	float SetRecoil(float Recoil) {
-		if (!this) { return 0.0f; }
+	bool SetRecoil(float Recoil) {
+		if (!this) { return false; }
 		CWeaponInfo* WeaponInfo = (CWeaponInfo*)GetWeaponInfo();
 		return Mem.Write<float>((uintptr_t)WeaponInfo + g_Offsets.m_Recoil, Recoil);
 	}
@@ -728,8 +857,8 @@ public:
 		return Mem.Read<float>((uintptr_t)WeaponInfo + g_Offsets.m_Spread);
 	}
 
-	float SetSpread(float Spread) {
-		if (!this) { return 0.0f; }
+	bool SetSpread(float Spread) {
+		if (!this) { return false; }
 		CWeaponInfo* WeaponInfo = (CWeaponInfo*)GetWeaponInfo();
 		return Mem.Write<float>((uintptr_t)WeaponInfo + g_Offsets.m_Spread, Spread);
 	}

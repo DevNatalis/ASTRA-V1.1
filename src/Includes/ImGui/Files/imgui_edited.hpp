@@ -2,7 +2,9 @@
 
 #include "imgui_internal.h"
 #include <D3DX11tex.h>
+#ifndef HAS_DXSDK_D3DX
 #pragma comment(lib, "D3DX11.lib")
+#endif
 #include <algorithm>
 #include <string>
 #include <vector>

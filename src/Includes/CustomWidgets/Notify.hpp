@@ -169,8 +169,8 @@ namespace NotifyManager
             float Progress = 1.0f - ((float)Notify.GetTimeDiff() / (float)Notify.GetExpireTime());
             ImVec2 ProgressBarMin = ImVec2(NotifyPos.Min.x + 2, NotifyPos.Max.y - 4);
             ImVec2 ProgressBarMax = ImVec2(NotifyPos.Min.x + 2 + ((NotifySize.x - 4) * Progress), NotifyPos.Max.y - 2);
-            ImVec2 ProgressBarShadowMax = ImVec2(NotifyPos.Min.x + 2 + ((NotifySize.x - 4) * (Progress * 1.1)), NotifyPos.Max.y - 1);
-            DrawList->AddRectFilled(ProgressBarMin, ProgressBarShadowMax, ImGui::GetColorU32(ImVec4(g_Col.notify), 0.3), 4);
+			ImVec2 ProgressBarShadowMax = ImVec2(NotifyPos.Min.x + 2.0f + ((NotifySize.x - 4.0f) * (Progress * 1.1f)), NotifyPos.Max.y - 1.0f);
+			DrawList->AddRectFilled(ProgressBarMin, ProgressBarShadowMax, ImGui::GetColorU32(ImVec4(g_Col.notify), 0.3f), 4.0f);
             DrawList->AddRectFilled(ProgressBarMin, ProgressBarMax, ImGui::GetColorU32(ImVec4(g_Col.notify)), 4);
 
             auto TitlePos = ImVec2(NotifyPos.Min.x + Padding, NotifyPos.Min.y + Padding - 1);

@@ -1,0 +1,26 @@
+ASTRA v1.1 - Pacote para uso (Windows 10/11 64-bit)
+================================================
+
+COMO USAR:
+1. Extraia TODOS os arquivos do ZIP para a mesma pasta.
+2. Clique com botao direito em ASTRA.exe > "Executar como administrador".
+3. Abra o jogo e aguarde a janela carregar antes de abrir o painel.
+
+ARQUIVOS NESTA PASTA:
+- ASTRA.exe          -> programa principal (requer admin)
+- d3dx9_43.dll, d3dx11_43.dll, D3DCompiler_43.dll -> DirectX (ja inclusos para PCs sem DX 2010)
+
+SE DER ERRO AO ABRIR:
+- "MSVCP140.dll / VCRUNTIME140 nao encontrado": instale o
+  "Microsoft Visual C++ Redistributable 2015-2022 x64":
+  https://aka.ms/vc-redist#vs2022
+- "d3dx9_43.dll nao encontrado": as DLLs ja vao junto neste ZIP.
+  Nao apague elas. Alternativa: instale o DirectX End-User Runtime (June 2010).
+- "Janela do jogo nao encontrada": abra o jogo primeiro, depois o ASTRA.
+
+OBS: nao precisa do codigo-fonte nem do Visual Studio. Basta esta pasta.
+Build: 06/10/2026 - Release x64.
+
+Atualizacao de seguranca: libcurl 8.22.0 / Schannel; FreeType 2.12.1.
+Descoberta de nomes exige HTTPS com certificado valido; servidores somente HTTP nao fornecem esses metadados.
+Licencas de dependencias em licenses/.

@@ -1,6 +1,8 @@
 #pragma once
 #include <Includes/Includes.hpp>
 #include <Core/SDK/Guard.hpp>
+#include <Core/SDK/PlayerNames.hpp>
+#include <algorithm>
 #include <Auth/auth_manager.hpp>
 #include <unordered_map>
 #include <string>
@@ -13,90 +15,72 @@ namespace Core {
         class cEntityList {
         public:
             inline std::string getPlayerNameByNetId(int netid) {
-                std::string name = "npc";
-                if (netid <= 0) return name;
-
-                uintptr_t moduleSize = 0;
-                const uintptr_t moduleBase = Mem.GetModuleBaseAddr(
-                    g_Variables.ProcIdFiveM,
-                    "citizen-playernames-five.dll",
-                    &moduleSize
-                );
-
-                if (!moduleBase || !moduleSize)
-                    return name;
-
-                static uintptr_t cachedOffset = 0;
-
-                if (!cachedOffset) {
-                    const size_t chunkSize = 4096;
-                    std::vector<uint8_t> buf(chunkSize);
-
-                    for (uintptr_t addr = moduleBase; addr < moduleBase + moduleSize - 7; addr += chunkSize - 7) {
-                        SIZE_T bytesRead = 0;
-                        if (!ReadProcessMemory(Mem.ProcHandle, (LPCVOID)addr, buf.data(), chunkSize, &bytesRead) || bytesRead < 7)
-                            continue;
-
-                        for (size_t i = 0; i < bytesRead - 6; i++) {
-                            if (buf[i] != 0x48 || buf[i + 1] != 0x8B || buf[i + 2] != 0x0D)
-                                continue;
-
-                            int32_t disp = *(int32_t*)(buf.data() + i + 3);
-                            uintptr_t resolved = (addr + i) + 7 + disp;
-                            if (resolved < moduleBase || resolved >= moduleBase + moduleSize)
-                                continue;
-
-                            uint8_t checkBuf[24];
-                            SIZE_T checkRead = 0;
-                            if (!ReadProcessMemory(Mem.ProcHandle, (LPCVOID)resolved, checkBuf, 24, &checkRead) || checkRead != 24)
-                                continue;
-
-                            uintptr_t ptr = *(uintptr_t*)checkBuf;
-                            int32_t count = *(int32_t*)(checkBuf + 8);
-                            if (!ptr || count <= 0 || count > 256)
-                                continue;
-
-                            uintptr_t listHead = 0;
-                            if (!ReadProcessMemory(Mem.ProcHandle, (LPCVOID)(ptr + 0x8), &listHead, sizeof(listHead), &checkRead) || !listHead)
-                                continue;
-
-                            uint8_t nodeBuf[32];
-                            if (!ReadProcessMemory(Mem.ProcHandle, (LPCVOID)listHead, nodeBuf, 32, &checkRead) || checkRead != 32)
-                                continue;
-
-                            int32_t nodeId = *(int32_t*)(nodeBuf + 0x10);
-                            if (nodeId >= 0 && nodeId < 10000) {
-                                cachedOffset = resolved - moduleBase;
-                                break;
-                            }
+                if (netid <= 0 || netid > 16777215) return {};
+                static DWORD processId = 0;
+                static uintptr_t listEntry = 0;
+                static uint64_t lastRefresh = 0, lastScan = 0;
+                static std::unordered_map<int, std::string> names;
+                if (processId != g_Variables.ProcIdFiveM) {
+                    processId = g_Variables.ProcIdFiveM;
+                    listEntry = 0;
+                    lastRefresh = lastScan = 0;
+                    names.clear();
+                }
+                const auto read = [](uintptr_t address, void* buffer, size_t size) {
+                    SIZE_T received = 0;
+                    return ReadProcessMemory(Mem.ProcHandle, reinterpret_cast<LPCVOID>(address),
+                        buffer, size, &received) && received == size;
+                };
+                const uint64_t now = GetTickCount64();
+                if (!lastRefresh || now - lastRefresh >= 1000) {
+                    lastRefresh = now;
+                    if (!listEntry || !PlayerNames::ReadList(read, listEntry, names)) {
+                        names.clear();
+                        listEntry = 0;
+                        // Atalho barato antes do scan: RVA direto do offdet.h
+                        // (PlayerNames b3258 = 0x1E63C68, LEA .data). Se o modulo
+                        // trocar a global de lugar, o scan abaixo assume.
+                        if (g_Offsets.CurrentBuild == 3258 && Mem.ModBase) {
+                            const uintptr_t direct = Mem.ModBase + 0x1E63C68;
+                            if (PlayerNames::ReadList(read, direct, names))
+                                listEntry = direct;
                         }
-                        if (cachedOffset) break;
+                        if (!lastScan || now - lastScan >= 5000) {
+                            lastScan = now;
+                            uintptr_t size = 0;
+                            const uintptr_t base = Mem.GetModuleBaseAddr(processId,
+                                "citizen-playernames-five.dll", &size);
+                            std::unordered_set<uintptr_t> checked;
+                            // Scan RIP-relative references and validate the complete list.
+                            for (uintptr_t offset = 0; base && offset + 7 <= size && !listEntry; offset += 4089) {
+                                unsigned char bytes[4096]{};
+                                const size_t length = (std::min)(size_t(4096), size_t(size - offset));
+                                if (!read(base + offset, bytes, length)) continue;
+                                for (size_t i = 0; i + 7 <= length && !listEntry; ++i) {
+                                    if ((bytes[i] & 0xF8) != 0x48 ||
+                                        (bytes[i+1] != 0x8B && bytes[i+1] != 0x8D) ||
+                                        (bytes[i+2] & 0xC7) != 0x05) continue;
+                                    int32_t displacement = 0;
+                                    std::memcpy(&displacement, bytes+i+3, 4);
+                                    const uintptr_t target = base + offset + i + 7 + displacement;
+                                    for (int adjustment : {0, 8, -8}) {
+                                        const uintptr_t candidate = target + adjustment;
+                                        if (candidate < base || candidate + 16 > base + size ||
+                                            !checked.insert(candidate).second) continue;
+                                        if (PlayerNames::ReadList(read, candidate, names)) {
+                                            listEntry = candidate;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (!listEntry)
+                                Debug::Warning("ESP Name", "Valid player-name list not found", 10000);
+                        }
                     }
                 }
-
-                if (!cachedOffset)
-                    return name;
-
-                const uintptr_t playerNamesArray = Mem.Read<uintptr_t>(moduleBase + cachedOffset);
-                if (!playerNamesArray)
-                    return name;
-
-                const int lastPlayer = Mem.Read<int>(moduleBase + cachedOffset + 0x8);
-                if (lastPlayer <= 0 || lastPlayer > 256)
-                    return name;
-
-                uintptr_t list = Mem.Read<uintptr_t>(playerNamesArray + 0x8);
-                if (!list)
-                    return name;
-
-                for (int i = 0; i < lastPlayer && list; ++i) {
-                    const int id = Mem.Read<int>(list + 0x10);
-                    if (netid == id)
-                        return Mem.ReadString(list + 0x18);
-                    list = Mem.Read<uintptr_t>(list + 0x8);
-                }
-
-                return name;
+                const auto found = names.find(netid);
+                return found == names.end() ? std::string{} : found->second;
             }
 
             void Update() {
@@ -161,39 +145,14 @@ namespace Core {
                                 entity.WeaponName = weaponInfo->GetName();
                         }
 
-                        entity.NetworkInfo.UserName = getPlayerNameByNetId(entity.Id);
-                        if (entity.NetworkInfo.UserName == "npc" || entity.NetworkInfo.UserName.empty()) {
-                            CPlayerInfo* pInfo = currentPed->GetPlayerInfo();
-                            if (pInfo) {
-                                std::string pedName = pInfo->GetName();
-                                if (!pedName.empty() && pedName.size() > 1)
-                                    entity.NetworkInfo.UserName = pedName;
+                        // Match exact server IDs. Never guess names from arbitrary fields.
+                        if (entity.IsPlayer && entity.Id > 0) {
+                            entity.NetworkInfo.UserName = getPlayerNameByNetId(entity.Id);
+                            if (entity.NetworkInfo.UserName.empty()) {
+                                Core::SDK::Game::NetworkInfo known{};
+                                if (g_UpdateNames.GetById(entity.Id, known))
+                                    entity.NetworkInfo = std::move(known);
                             }
-                        }
-                        if ((entity.NetworkInfo.UserName == "npc" || entity.NetworkInfo.UserName.empty()) && entity.IsPlayer) {
-                            uintptr_t netPlayer = Mem.Read<uintptr_t>((uintptr_t)currentPed + 0xD0);
-                            if (netPlayer) {
-                                uintptr_t cnetGamePlayer = Mem.Read<uintptr_t>(netPlayer + 0xB0);
-                                if (cnetGamePlayer) {
-                                    std::string netName = Mem.ReadString(cnetGamePlayer + 0x08);
-                                    if (!netName.empty() && netName.size() > 1 && netName.size() < 100) {
-                                        entity.NetworkInfo.UserName = netName;
-                                    }
-                                }
-                            }
-                        }
-                        if ((entity.NetworkInfo.UserName == "npc" || entity.NetworkInfo.UserName.empty()) && entity.IsPlayer) {
-                            // Fonte autoritativa: lista do servidor (server-id -> nome).
-                            // A thread UpdateNames atualiza esse mapa a cada ~6s.
-                            Core::SDK::Game::NetworkInfo known{};
-                            if (g_UpdateNames.GetById(entity.Id, known) && !known.UserName.empty()) {
-                                entity.NetworkInfo.UserName = known.UserName;
-                            }
-                        }
-                        // Sem nome resolvido: deixa vazio. O ESP omite o texto
-                        // em vez de exibir um nome falso ("Jogador_X").
-                        if (entity.NetworkInfo.UserName == "npc" && entity.IsPlayer) {
-                            entity.NetworkInfo.UserName.clear();
                         }
 
                         freshEntities.push_back(std::move(entity));

@@ -21,7 +21,6 @@ namespace Core
                 {
                     std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
 
-                    //if ( !g_MenuInfo.IsLogged && !g_Variables.g_bPassedByThisVerify )
                      //   continue;
 
                     // STABILITY: each pointer resolves independently; one bad

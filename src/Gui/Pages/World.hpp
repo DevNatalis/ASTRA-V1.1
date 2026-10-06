@@ -1,5 +1,6 @@
-﻿#include <Includes/includes.hpp>
+#include <Includes/includes.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
+#include <Core/Features/GodMode.hpp>
 #include <windows.h>
 #include <iostream>
 #include <thread>
@@ -111,12 +112,12 @@ namespace World {
 
                     if (Custom::Button("Teleportar", ImVec2(-1, 26), 0)) {
                         if (Core::SDK::Pointers::pLocalPlayer) {
-                            Core::SDK::Pointers::pLocalPlayer->SetGodMode(true);
+                            Core::Features::g_GodMode.TeleportGuardBegin();
                             Core::SDK::Pointers::pLocalPlayer->SetPos(ped.Pos);
                             std::thread([]() {
                                 std::this_thread::sleep_for(std::chrono::milliseconds(300));
                                 if (Core::SDK::Pointers::pLocalPlayer)
-                                    Core::SDK::Pointers::pLocalPlayer->SetGodMode(false);
+                                    Core::Features::g_GodMode.TeleportGuardEnd(g_Config.Player->EnableGodMode);
                                 NotifyManager::Send(xorstr("Teleportado!"), 2000);
                             }).detach();
                         }

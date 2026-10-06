@@ -196,7 +196,7 @@ namespace Core {
 			g_Offsets.m_LastVehicle = 0xD10;
 			g_Offsets.m_PlayerInfo = 0x10A8;
 			g_Offsets.m_FragInst = 0x1430;
-			g_Offsets.m_PlayerId = 0xE8;
+			g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_Armor = 0x150C;
 			g_Offsets.m_PedFlag = 0x1444;
 			break;
@@ -208,7 +208,7 @@ namespace Core {
 			g_Offsets.m_LastVehicle = 0xD10;
 			g_Offsets.m_PlayerInfo = 0x10A8;
 			g_Offsets.m_FragInst = 0x1430;
-			g_Offsets.m_PlayerId = 0xE8;
+			g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_Armor = 0x150C;
 			g_Offsets.m_PedFlag = 0x1444;
 			break;
@@ -220,7 +220,7 @@ namespace Core {
 			g_Offsets.m_LastVehicle = 0xD10;
 			g_Offsets.m_PlayerInfo = 0x10A8;
 			g_Offsets.m_FragInst = 0x1430;
-			g_Offsets.m_PlayerId = 0xE8;
+			g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_Armor = 0x150C;
 			g_Offsets.m_PedFlag = 0x1444;
 			break;
@@ -241,7 +241,7 @@ namespace Core {
 			g_Offsets.m_WeaponInfo = 0x20;
 			g_Offsets.m_LastVehicle = 0xD30;
 			g_Offsets.m_PlayerInfo = 0x10C8;
-			g_Offsets.m_PlayerId = 0x88;
+			g_Offsets.m_PlayerId = 0x88; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_FragInst = 0x1400;
 			g_Offsets.m_Armor = 0x14E0;
 			g_Offsets.m_PedFlag = 0x1414;
@@ -292,7 +292,7 @@ namespace Core {
 					g_Offsets.m_LastVehicle = 0xD10;
 					g_Offsets.m_PlayerInfo = 0x10A8;
 					g_Offsets.m_FragInst = 0x1430;
-					g_Offsets.m_PlayerId = 0xE8;
+					g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_Armor = 0x150C;
 					g_Offsets.m_PedFlag = 0x1444;
 					g_Offsets.CurrentBuild = 3095;
@@ -311,7 +311,7 @@ namespace Core {
 					g_Offsets.m_LastVehicle = 0xD10;
 					g_Offsets.m_PlayerInfo = 0x10A8;
 					g_Offsets.m_FragInst = 0x1430;
-					g_Offsets.m_PlayerId = 0xE8;
+					g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_Armor = 0x150C;
 					g_Offsets.m_PedFlag = 0x1444;
 					g_Offsets.CurrentBuild = 2944;
@@ -401,7 +401,7 @@ namespace Core {
 
 					g_Offsets.m_MaxHealth = 0x2A0;
 					g_Offsets.m_EntityType = 0x10B8;
-					g_Offsets.m_PlayerId = 0x68;
+					g_Offsets.m_PlayerId = 0x68; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_Speed = 0xCD0;
 					g_Offsets.CurrentBuild = 2189;
 					break;
@@ -415,7 +415,7 @@ namespace Core {
 
 					g_Offsets.m_MaxHealth = 0x2A0;
 					g_Offsets.m_EntityType = 0x10B8;
-					g_Offsets.m_PlayerId = 0x68;
+					g_Offsets.m_PlayerId = 0x68; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_Speed = 0xCD0;
 					g_Offsets.CurrentBuild = 2060;
 					break;
@@ -431,7 +431,7 @@ namespace Core {
 					g_Offsets.m_WeaponManager = 0x10C8;
 					g_Offsets.m_LastVehicle = 0xD28;
 					g_Offsets.m_PlayerInfo = 0x10B8;
-					g_Offsets.m_PlayerId = 0x68;
+					g_Offsets.m_PlayerId = 0x68; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_FragInst = 0x13E0;
 					g_Offsets.CurrentBuild = 1604;
 					break;
@@ -447,7 +447,7 @@ namespace Core {
 					g_Offsets.m_WeaponManager = 0x10C8;
 					g_Offsets.m_LastVehicle = 0xD28;
 					g_Offsets.m_PlayerInfo = 0x10B8;
-					g_Offsets.m_PlayerId = 0x68;
+					g_Offsets.m_PlayerId = 0x68; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_FragInst = 0x13E0;
 					g_Offsets.CurrentBuild = 1604;
 					break;
@@ -572,7 +572,7 @@ namespace Core {
 			g_Offsets.m_LastVehicle = 0xD10;
 			g_Offsets.m_PlayerInfo = 0x10A8;
 			g_Offsets.m_FragInst = 0x1430;
-			g_Offsets.m_PlayerId = 0xE8;
+			g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_Armor = 0x150C;
 			g_Offsets.m_PedFlag = 0x1444;
 			break;
@@ -583,7 +583,7 @@ namespace Core {
 			g_Offsets.m_LastVehicle = 0xD10;
 			g_Offsets.m_PlayerInfo = 0x10A8;
 			g_Offsets.m_FragInst = 0x1430;
-			g_Offsets.m_PlayerId = 0xE8;
+			g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_Armor = 0x150C;
 			g_Offsets.m_PedFlag = 0x1444;
 			break;
@@ -594,7 +594,7 @@ namespace Core {
 			g_Offsets.m_LastVehicle = 0xD10;
 			g_Offsets.m_PlayerInfo = 0x10A8;
 			g_Offsets.m_FragInst = 0x1430;
-			g_Offsets.m_PlayerId = 0xE8;
+			g_Offsets.m_PlayerId = 0x7C; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_Armor = 0x150C;
 			g_Offsets.m_PedFlag = 0x1444;
 			break;
@@ -613,7 +613,7 @@ namespace Core {
 			g_Offsets.m_WeaponInfo = 0x20;
 			g_Offsets.m_LastVehicle = 0xD30;
 			g_Offsets.m_PlayerInfo = 0x10C8;
-			g_Offsets.m_PlayerId = 0x88;
+			g_Offsets.m_PlayerId = 0x88; g_Offsets.m_CPedNetId = 0xE8;
 			g_Offsets.m_FragInst = 0x1400;
 			g_Offsets.m_Armor = 0x14E0;
 			g_Offsets.m_PedFlag = 0x1414;
@@ -728,7 +728,7 @@ namespace Core {
 					g_Offsets.m_WeaponManager = 0x10C8;
 					g_Offsets.m_LastVehicle = 0xD28;
 					g_Offsets.m_PlayerInfo = 0x10B8;
-					g_Offsets.m_PlayerId = 0x68;
+					g_Offsets.m_PlayerId = 0x68; g_Offsets.m_CPedNetId = 0xE8;
 					g_Offsets.m_FragInst = 0x13E0;
 				}
 			}

@@ -25,7 +25,7 @@ namespace Custom
 				if (Widget.AlphaAnimation == 0)
 					continue;
 
-				ImGui::PushID(i);
+				ImGui::PushID(static_cast<const void*>(&Widget));
 				{
 					ImGui::SetCursorScreenPos(Widget.Position);
 					ImGui::InvisibleButton((xorstr("Drag&Drop##") + Widget.Text).c_str(), Widget.Size + ImVec2(10, 10));

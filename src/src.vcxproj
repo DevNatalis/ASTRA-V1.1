@@ -44,7 +44,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -72,25 +72,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Security\Api\curl;$(ProjectDir)Includes\ImGui\Files\FreeType\win64;$(DXSDK_DIR)Lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl\Debug;$(ProjectDir)Includes\ImGui\Files\FreeType\win64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Security\Api\curl;$(ProjectDir)Includes\ImGui\Files\FreeType\win64;$(DXSDK_DIR)Lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(ProjectDir)Includes\ImGui\Files\FreeType\win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Security\Api\curl;$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Security\Api\curl;$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)Includes;$(ProjectDir)Includes\ImGui\Files\FreeType\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Security\Api\curl;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -107,6 +108,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -123,41 +125,39 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <PreprocessorDefinitions>_DEBUG;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;advapi32.lib;secur32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>d3dx9.lib;d3d9.lib;d3d11.lib;ws2_32.lib;wldap32.lib;crypt32.lib;normaliz.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
-      <EntryPointSymbol>
-      </EntryPointSymbol>
-      <AdditionalLibraryDirectories>$(DXSDK_DIR)Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -244,12 +244,11 @@
     <ClInclude Include="Utils\Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Bypass\Manipulation\Bypass.cpp" />
-    <ClCompile Include="Bypass\Manipulation\reg.cpp" />
-    <ClCompile Include="Bypass\Manipulation\task.cpp" />
     <ClCompile Include="Core\Features\Aimbot.cpp" />
     <ClCompile Include="Core\Features\Esp.cpp" />
     <ClInclude Include="Core\Features\Exploits\HandlingEditor.hpp" />
+    <ClInclude Include="Core\Features\GodMode.hpp" />
+    <ClInclude Include="Core\Features\WeaponWheel.hpp" />
     <ClCompile Include="Core\Features\SilentAim.cpp" />
     <ClCompile Include="Core\Features\Triggerbot.cpp" />
     <ClCompile Include="Core\SDK\Memory.cpp" />
@@ -271,8 +270,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="Includes\ImGui\Files\FreeType\win64\freetype.lib" />
-    <Library Include="Security\Api\curl\libcurl.lib" />
+    <Library Include="Includes\ImGui\Files\FreeType\win64\freetype.lib" Condition="'$(Configuration)' != 'Debug'" />
+    <Library Include="Includes\ImGui\Files\FreeType\win64\Debug\freetype.lib" Condition="'$(Configuration)' == 'Debug'" />
+    <Library Include="Security\Api\curl\libcurl.lib" Condition="'$(Configuration)' != 'Debug'" />
+    <Library Include="Security\Api\curl\Debug\libcurl.lib" Condition="'$(Configuration)' == 'Debug'" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

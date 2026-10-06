@@ -1,5 +1,38 @@
+#define ASTRA_AUTH_TESTS
 #include <Auth/auth_manager.hpp>
 #include <iostream>
+#include <limits>
+
+struct AuthRegression {
+    static bool CheckBoundaries() {
+        AuthManager manager;
+        manager.sessionid_ = "session+&=%";
+        if (manager.BuildCheckFields().find("type=check&sessionid=session%2B%26%3D%25&") != 0) return false;
+        std::string body(256 * 1024 - 1, 'a');
+        char byte = 'x';
+        if (AuthManager::WriteCallback(&byte, 1, 1, &body) != 1) return false;
+        if (AuthManager::WriteCallback(&byte, 1, 1, &body) != 0) return false;
+        if (AuthManager::WriteCallback(&byte, (std::numeric_limits<size_t>::max)(), 2, &body) != 0) return false;
+        if (AuthManager::WriteCallback(nullptr, 0, 1, &body) != 0) return false;
+        // Exercise the actual consumer against publication from a worker.
+        for (int i = 0; i < 500; ++i) {
+            manager.requestInProgress = true;
+            manager.async.ready = false;
+            const std::string expected = "failure " + std::to_string(i);
+            std::thread worker([&] {
+                manager.async.result = AuthResult::InvalidCredentials;
+                manager.async.message = expected;
+                manager.async.ready = true;
+                manager.requestInProgress = false;
+            });
+            while (!manager.async.ready.load() || manager.requestInProgress.load()) std::this_thread::yield();
+            manager.ConsumeResult();
+            worker.join();
+            if (manager.errorMsg != expected || manager.async.ready.load()) return false;
+        }
+        return true;
+    }
+};
 
 int main() {
     int failures = 0;
@@ -25,6 +58,16 @@ int main() {
     multi["info"]["subscriptions"][0]["expiry"] = "999";
     multi["info"]["subscriptions"].push_back(valid["info"]["subscriptions"][0]);
     check(AuthPolicy::ParseLicense(multi, 1000, license), "valid subscription after expired one");
+    for (auto bad : {json(nullptr), json(2000), json(true), json::array(), json::object()}) {
+        auto j = valid;
+        j["info"]["subscriptions"][0]["expiry"] = bad;
+        check(!AuthPolicy::ParseLicense(j, 1000, license), "reject unexpected expiry type");
+    }
+    multi = valid;
+    multi["info"]["subscriptions"].push_back(json::object());
+    check(!AuthPolicy::ParseLicense(multi, 1000, license), "malformed entry after valid entry fails closed");
+    check(license.user.empty(), "no partially published license");
+    check(AuthRegression::CheckBoundaries(), "body limit, encoded heartbeat and 500 concurrent publications");
     auto missing = valid;
     missing["info"]["subscriptions"][0].erase("expiry");
     check(!AuthPolicy::ParseLicense(missing, 1000, license), "missing expiry");

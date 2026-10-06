@@ -17,6 +17,9 @@
 #include <Gui/Pages/Login.hpp>
 
 #include <Core/Features/Exploits/Exploits.hpp>
+#include <Core/Features/GodMode.hpp>
+#include <Core/Features/WeaponWheel.hpp>
+#include <Core/Features/Revive.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
 #include <Core/Features/Esp.hpp>
 
@@ -109,7 +112,7 @@ void particles2()
 	{
 		if (particle_pos[i].x == 0 || particle_pos[i].y == 0)
 		{
-			particle_pos[i].x = rand() % (int)screen_size.x + 1;
+			particle_pos[i].x = static_cast<float>(rand() % static_cast<int>(screen_size.x) + 1);
 			particle_pos[i].y = 15.f;
 			particle_speed[i] = g_MenuInfo.minSpeed + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (g_MenuInfo.maxSpeed - g_MenuInfo.minSpeed)));
 			particle_radius[i] = g_MenuInfo.minRadius + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (g_MenuInfo.maxRadius - g_MenuInfo.minRadius)));
@@ -220,10 +223,10 @@ private:
 
 		std::random_device rd;
 		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> disPos(0, 10);
-		std::uniform_real_distribution<> disVel(-50, 50);
-		std::uniform_real_distribution<> disColor(0, 1);
-		std::uniform_real_distribution<> disRadius(1, 3);
+		std::uniform_real_distribution<float> disPos(0.f, 10.f);
+		std::uniform_real_distribution<float> disVel(-50.f, 50.f);
+		std::uniform_real_distribution<float> disColor(0.f, 1.f);
+		std::uniform_real_distribution<float> disRadius(1.f, 3.f);
 
 		for (int i = 0; i < numParticles; ++i)
 		{
@@ -241,8 +244,8 @@ private:
 	{
 		std::random_device rd;
 		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> disPos(0, 1);
-		std::uniform_real_distribution<> disVel(-50, 50);
+		std::uniform_real_distribution<float> disPos(0.f, 1.f);
+		std::uniform_real_distribution<float> disVel(-50.f, 50.f);
 
 		particle.position = ImVec2(disPos(gen) * ImGui::GetWindowWidth(), disPos(gen) * ImGui::GetWindowHeight());
 		particle.velocity = ImVec2(disVel(gen), disVel(gen));
@@ -398,7 +401,7 @@ void Gui::Rendering()
 
 		if (g_MenuInfo.IsLogged)
 		{
-			float time = ImGui::GetTime();
+			const float time = static_cast<float>(ImGui::GetTime());
 			ImColor rgbColor = ImColor::HSV(fmod(time * g_MenuInfo.rgbSpeed, 1.0f), 0.8f, 0.8f);
 
 			if (g_MenuInfo.enableRGBParticles) {
@@ -484,22 +487,63 @@ void Gui::Rendering()
 				std::lock_guard<std::mutex> Lock(DrawMtx);
 
 				NotifyManager::Render();
+				if (g_Auth.IsSessionValid())
+					Core::Features::g_Revive.Tick();
+				else
+					Core::Features::g_Revive.SetEnabled(false);
+
+				// GodMode anti-detect: o Tick so escreve quando a vida cai
+				// abaixo do limiar (cooldown + jitter). Sem IO com vida cheia.
+				static bool godModeWasEnabled = false;
+				if (g_Auth.IsSessionValid() && Core::SDK::Pointers::pLocalPlayer &&
+					(g_Config.Player->EnableGodMode || godModeWasEnabled)) {
+					if (g_Config.Player->EnableGodMode && !godModeWasEnabled)
+						Core::Features::g_GodMode.SetEnabled(true);
+					else if (!g_Config.Player->EnableGodMode && godModeWasEnabled)
+						Core::Features::g_GodMode.SetEnabled(false);
+					if (g_Config.Player->EnableGodMode)
+						Core::Features::g_GodMode.Tick();
+					godModeWasEnabled = g_Config.Player->EnableGodMode;
+				}
+
+				// Force weapon wheel (unlock wheel): o Tick so escreve se
+				// algum bit de controle estiver setado. Sem IO se liberado.
+				static bool wheelWasEnabled = false;
+				if (g_Auth.IsSessionValid() && Core::SDK::Pointers::pLocalPlayer &&
+					(g_Config.Player->ForceWeaponWheel || wheelWasEnabled)) {
+					if (g_Config.Player->ForceWeaponWheel && !wheelWasEnabled)
+						Core::Features::g_WeaponWheel.SetEnabled(true);
+					else if (!g_Config.Player->ForceWeaponWheel && wheelWasEnabled)
+						Core::Features::g_WeaponWheel.SetEnabled(false);
+					if (g_Config.Player->ForceWeaponWheel)
+						Core::Features::g_WeaponWheel.Tick();
+					wheelWasEnabled = g_Config.Player->ForceWeaponWheel;
+				}
 
 				if (ActiveWindow == g_Variables.g_hGameWindow)
 				{
-					if (GetAsyncKeyState(g_Config.Player->GodModeKey) & 1)
+					if (g_Config.Player->GodModeKey > 0 && (GetAsyncKeyState(g_Config.Player->GodModeKey) & 1))
 					{
 						g_Config.Player->EnableGodMode = !g_Config.Player->EnableGodMode;
 
-						if (Core::SDK::Pointers::pLocalPlayer)
-							Core::SDK::Pointers::pLocalPlayer->SetGodMode(g_Config.Player->EnableGodMode);
+						Core::Features::g_GodMode.SetEnabled(g_Config.Player->EnableGodMode);
+						const bool applied = Core::SDK::Pointers::pLocalPlayer != nullptr;
+						NotifyManager::Send(applied ? std::string("GodMode ") +
+							(g_Config.Player->EnableGodMode ? "ativado" : "desativado") :
+							"Nao foi possivel aplicar GodMode ao jogador", 2000);
 
-						std::thread([&]()
-							{
-								NotifyManager::Send(xorstr("GodMode foi ") + (std::string)(g_Config.Player->EnableGodMode ? xorstr("ativado!") : xorstr("desativado!")), 2000);
-							}
-						).detach();
+					}
 
+					// Toggle F10: force weapon wheel (unlock wheel).
+					if ((GetAsyncKeyState(VK_F10) & 1))
+					{
+						g_Config.Player->ForceWeaponWheel = !g_Config.Player->ForceWeaponWheel;
+
+						Core::Features::g_WeaponWheel.SetEnabled(g_Config.Player->ForceWeaponWheel);
+						if (g_Config.Player->ForceWeaponWheel)
+							Core::Features::g_WeaponWheel.ForceWeaponWheel();
+						NotifyManager::Send(std::string("Roda de Armas ") +
+							(g_Config.Player->ForceWeaponWheel ? "forcada (F10)" : "normal (F10)"), 2000);
 					}
 
 					if (GetAsyncKeyState(g_Config.Player->NoClipKey) & 1)

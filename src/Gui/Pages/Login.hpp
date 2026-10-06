@@ -161,8 +161,6 @@ namespace LoginUI
             {
                 g_Variables.UserName = g_Auth.loggedUser;
                 g_Variables.Role     = g_Auth.loggedRole;
-                g_Variables.g_bPassedByThisVerify = true;
-                g_Variables.g_VerifyLogin         = 348975682703ULL;
                 g_MenuInfo.IsLogged = true;
                 g_MenuInfo.IsOpen = true;
                 g_MenuInfo.MenuSize = { ReferenceMenu::Width, ReferenceMenu::Height };

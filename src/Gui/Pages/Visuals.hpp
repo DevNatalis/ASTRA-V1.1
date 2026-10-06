@@ -87,10 +87,10 @@ namespace Visuals {
 			if (Custom::CheckBox(xorstr("Filtro de Visibilidade"), &g_Config.ESP->HighlightVisible))
 				NotifyManager::Send(std::string("Filtro de Visibilidade ") + (g_Config.ESP->HighlightVisible ? "ativado" : "desativado"), 2000);
 
-			if (Custom::CheckBoxCfg(xorstr("Identificador de Amigo"), &g_Config.ESP->FriendsMarker, [] {
+			Custom::CheckBoxCfg(xorstr("Identificador de Amigo"), &g_Config.ESP->FriendsMarker, [] {
 					static int KeyMode = 1;
 					ImGui::Keybind(xorstr("Tecla de Ativacao"), &g_Config.ESP->FriendsMarkerBind, &KeyMode);
-					}));
+					});
 
 			if (Custom::CheckBox(xorstr("ESP Admin"), &g_Config.ESP->AdminESP))
 				NotifyManager::Send(std::string("ESP Admin ") + (g_Config.ESP->AdminESP ? "ativado" : "desativado"), 2000);

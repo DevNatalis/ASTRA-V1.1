@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread>
 #include <Core/Core.hpp>
+#include <Core/Features/WeaponWheel.hpp>
 #include <Core/Features/Exploits/ResourceList.hpp>
 #include <Core/Features/Exploits/GiveWeapon.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
@@ -49,10 +50,9 @@ namespace Weapons {
 
                 if (Custom::CheckBox(xorstr("Forcar Roda de Armas"), &g_Config.Player->ForceWeaponWheel))
                 {
-                    std::thread([]() {
-                        if (Core::SDK::Pointers::pLocalPlayer)
-                            Core::SDK::Pointers::pLocalPlayer->ForceWeaponWheel(g_Config.Player->ForceWeaponWheel);
-                    }).detach();
+                    Core::Features::g_WeaponWheel.SetEnabled(g_Config.Player->ForceWeaponWheel);
+                    if (g_Config.Player->ForceWeaponWheel)
+                        Core::Features::g_WeaponWheel.ForceWeaponWheel();
                     NotifyManager::Send(std::string("Roda de Armas ") + (g_Config.Player->ForceWeaponWheel ? "forcada" : "normal"), 2000);
                 }
 

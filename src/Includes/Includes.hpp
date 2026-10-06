@@ -47,6 +47,8 @@
 #pragma comment( lib, "libcurl.lib" )
 
 #pragma comment( lib, "d3d11.lib" )
+#ifndef HAS_DXSDK_D3DX
 #pragma comment( lib, "D3DX11.lib" )
+#endif
 
 using namespace Core;

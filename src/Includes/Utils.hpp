@@ -9,7 +9,7 @@
 
 namespace Utils {
 
-	inline ImVec2 CalcTextSize( ImFont * font, int size, const char * label ) {
+	inline ImVec2 CalcTextSize( ImFont * font, float size, const char * label ) {
 		return font->CalcTextSizeA( size, FLT_MAX, 0, label );
 	}
 
@@ -130,7 +130,7 @@ namespace Utils {
 			int width = rect.right - rect.left;
 			int height = rect.bottom - rect.top;
 
-			DWORD dwStyle = GetWindowLongPtr( window, GWL_STYLE );
+			const LONG_PTR dwStyle = GetWindowLongPtr( window, GWL_STYLE );
 			if ( dwStyle & WS_BORDER ) {
 				x += 8; 
 				y += 32;
@@ -155,7 +155,8 @@ namespace Utils {
 		HANDLE hData = GetClipboardData( CF_TEXT );
 		if (!hData) return {};
 		const SIZE_T capacity = GlobalSize(hData);
-		if (!capacity) return {};
+		constexpr SIZE_T maxInput = 1024 * 1024;
+		if (!capacity || capacity > maxInput) return {};
 		char * pszText = static_cast< char * >( GlobalLock( hData ) );
 		if (!pszText) return {};
 		struct GlobalLockGuard {
@@ -169,13 +170,19 @@ namespace Utils {
 	}
 
 	inline void PasteClipboard( const char * seila ) {
-		const size_t len = strlen( seila ) + 1;
+		if (!seila) return;
+		constexpr size_t maxInput = 1024 * 1024;
+		const size_t length = strnlen_s(seila, maxInput);
+		if (length == maxInput) return;
+		const size_t len = length + 1;
 		HGLOBAL hMem = GlobalAlloc( GMEM_MOVEABLE, len );
-		memcpy( GlobalLock( hMem ), seila, len );
+		if (!hMem) return;
+		void* target = GlobalLock(hMem);
+		if (!target) { GlobalFree(hMem); return; }
+		memcpy(target, seila, len);
 		GlobalUnlock( hMem );
-		OpenClipboard( 0 );
-		EmptyClipboard( );
-		SetClipboardData( CF_TEXT, hMem );
+		if (!OpenClipboard(0)) { GlobalFree(hMem); return; }
+		if (!EmptyClipboard() || !SetClipboardData(CF_TEXT, hMem)) GlobalFree(hMem);
 		CloseClipboard( );
 	}
 
@@ -223,40 +230,4 @@ namespace Utils {
 		}
 	}
 
-	inline std::string GetHWID( )
-	{
-		HANDLE hToken;
-		if ( !OpenProcessToken( GetCurrentProcess( ), TOKEN_QUERY, &hToken ) ) {
-			return "";
-		}
-
-		DWORD dwLength = 0;
-		GetTokenInformation( hToken, TokenUser, nullptr, 0, &dwLength );
-		if ( GetLastError( ) != ERROR_INSUFFICIENT_BUFFER ) {
-			CloseHandle( hToken );
-			return "";
-		}
-
-		std::vector<BYTE> buffer( dwLength );
-		if ( !GetTokenInformation( hToken, TokenUser, buffer.data( ), dwLength, &dwLength ) ) {
-			CloseHandle( hToken );
-			return "";
-		}
-
-		CloseHandle( hToken );
-
-		PTOKEN_USER pTokenUser = reinterpret_cast< PTOKEN_USER >( buffer.data( ) );
-
-		LPSTR sid = nullptr;
-
-		if ( !ConvertSidToStringSidA( pTokenUser->User.Sid, &sid ) ) {
-			return "";
-		}
-
-		std::string sidStr( sid );
-
-		LocalFree( sid );
-
-		return sidStr;
-	}
 }

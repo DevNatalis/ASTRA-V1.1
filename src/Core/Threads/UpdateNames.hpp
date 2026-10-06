@@ -10,6 +10,7 @@
 #include <iostream>
 #include <shared_mutex>
 #include <unordered_map>
+#include <chrono>
 
 #define CURL_STATIC_LIB
 #include <Security/Api/curl/curl.h>
@@ -50,8 +51,35 @@ namespace Core
 		private:
 			static size_t WriteCallBack( void * contents, size_t size, size_t nmemb, void * userp )
 			{
-				( ( std::string * ) userp )->append( ( char * ) contents, size * nmemb );
-				return size * nmemb;
+				constexpr size_t limit = 2 * 1024 * 1024;
+				if (!userp || !contents || !size || nmemb > limit / size) return 0;
+				const size_t bytes = size * nmemb;
+				auto& body = *static_cast<std::string*>(userp);
+				if (body.size() > limit || bytes > limit - body.size()) return 0;
+				try { body.append(static_cast<char*>(contents), bytes); }
+				catch (...) { return 0; }
+				return bytes;
+			}
+
+			static bool ConfigureRequest(CURL* hnd, std::string& body)
+			{
+				return curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, WriteCallBack) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &body) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_TIMEOUT, 10L) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT, 3L) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_NOSIGNAL, 1L) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_PROTOCOLS_STR, "https") == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_REDIR_PROTOCOLS_STR, "https") == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 0L) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 3L) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 1L) == CURLE_OK &&
+					curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 2L) == CURLE_OK;
+			}
+
+			static bool IsDiscoveryDestination(const std::string& url)
+			{
+				return url.rfind("https://cfx.re/join/", 0) == 0 ||
+					url.rfind("https://servers.fivem.net/servers/detail/", 0) == 0;
 			}
 
 			std::string ExtractIp( const std::string & line )
@@ -81,6 +109,8 @@ namespace Core
 			}
 
 			std::string GetServerToken( ) {
+				RedirectUrl.clear();
+				ServerIp.clear();
 
 				if ( DirFiveM.empty( ) )
 				{
@@ -123,48 +153,54 @@ namespace Core
 
 				std::string ResponseStr;
 
-				std::string ReqUrl = xorstr( "http://" ) + ServerIp;
+				// Discovery requires valid TLS. HTTP-only servers are not queried.
+				std::string ReqUrl = xorstr( "https://" ) + ServerIp;
 
 				CURL * hnd;
-				CURLcode res;
+				CURLcode res = CURLE_FAILED_INIT;
 				hnd = curl_easy_init( );
 				if ( hnd ) {
-					curl_easy_setopt( hnd, CURLOPT_CUSTOMREQUEST, xorstr( "GET" ) );
-					curl_easy_setopt( hnd, CURLOPT_URL, ReqUrl.c_str( ) );
-
-					struct curl_slist * headers = NULL;
-					curl_easy_setopt( hnd, CURLOPT_HTTPHEADER, headers );
-
-					curl_easy_setopt( hnd, CURLOPT_WRITEFUNCTION, WriteCallBack );
-					curl_easy_setopt( hnd, CURLOPT_WRITEDATA, &ResponseStr );
-
-					curl_easy_setopt( hnd, CURLOPT_FOLLOWLOCATION, 1L );
-					curl_easy_setopt( hnd, CURLOPT_MAXREDIRS, 10L );
-
-					res = curl_easy_perform( hnd );
-
-					if ( res == CURLE_OK )
-					{
-						char * FinalUrl;
-						curl_easy_getinfo( hnd, CURLINFO_EFFECTIVE_URL, &FinalUrl );
-
-						if ( FinalUrl ) {
-							RedirectUrl = std::string( FinalUrl );
+					if (!ConfigureRequest(hnd, ResponseStr)) { curl_easy_cleanup(hnd); return {}; }
+					const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+					// Inspect every redirect before connecting, including its host.
+					for (int redirects = 0; redirects <= 3; ++redirects) {
+						const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
+							deadline - std::chrono::steady_clock::now()).count();
+						if (remaining <= 0) { res = CURLE_OPERATION_TIMEDOUT; break; }
+						if (curl_easy_setopt(hnd, CURLOPT_URL, ReqUrl.c_str()) != CURLE_OK ||
+							curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, static_cast<long>(remaining)) != CURLE_OK) break;
+						ResponseStr.clear();
+						res = curl_easy_perform(hnd);
+						if (res != CURLE_OK) break;
+						long status = 0;
+						if (curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &status) != CURLE_OK) break;
+						if (status >= 200 && status < 300) {
+							RedirectUrl = ReqUrl;
+							break;
 						}
+						char* nextUrl = nullptr;
+						if (status < 300 || status >= 400 || redirects == 3 ||
+							curl_easy_getinfo(hnd, CURLINFO_REDIRECT_URL, &nextUrl) != CURLE_OK ||
+							!nextUrl || !IsDiscoveryDestination(nextUrl)) break;
+						ReqUrl = nextUrl;
 					}
 
 					curl_easy_cleanup( hnd );
 				}
 
-				if ( ResponseStr.empty( ) ) {
+				if (res != CURLE_OK || ResponseStr.empty()) {
 					return xorstr("");
 				}
 
+				// Accept only the public join-link destinations used for discovery.
+				if (!IsDiscoveryDestination(RedirectUrl)) return {};
 				auto pos = RedirectUrl.find_last_of( '/' );
 				if ( pos == std::string::npos )
 					return xorstr( "" );
 
 				std::string Token = RedirectUrl.substr( pos + 1 );
+				if (Token.empty() || Token.size() > 64 ||
+					Token.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != std::string::npos) return {};
 
 				return Token;
 			}
@@ -180,9 +216,10 @@ namespace Core
 
 				std::string ResponseStr;
 				CURL * hnd;
-				CURLcode res;
+				CURLcode res = CURLE_FAILED_INIT;
 				hnd = curl_easy_init( );
 				if ( hnd ) {
+					if (!ConfigureRequest(hnd, ResponseStr)) { curl_easy_cleanup(hnd); return nullptr; }
 					curl_easy_setopt( hnd, CURLOPT_CUSTOMREQUEST, xorstr("GET") );
 					curl_easy_setopt( hnd, CURLOPT_URL, ApiUrl.c_str( ) );
 
@@ -194,11 +231,14 @@ namespace Core
 					curl_easy_setopt( hnd, CURLOPT_WRITEDATA, &ResponseStr );
 
 					res = curl_easy_perform( hnd );
-
+					long status = 0;
+					curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &status);
+					curl_slist_free_all(headers);
 					curl_easy_cleanup( hnd );
+					if (status != 200) return nullptr;
 				}
 
-				if ( ResponseStr.empty( ) )
+				if (res != CURLE_OK || ResponseStr.empty())
 					return NULL;
 
 				nlohmann::json ResponseJson;
@@ -282,8 +322,6 @@ namespace Core
 				{
 					std::this_thread::sleep_for( std::chrono::milliseconds( 6000 ) );
 					try {
-						//if ( !g_MenuInfo.IsLogged && !g_Variables.g_bPassedByThisVerify )
-							//continue;
 
 						GetPlayerNames( );
 					}

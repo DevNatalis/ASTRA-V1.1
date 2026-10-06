@@ -1,11 +1,9 @@
 #pragma once
 #include <Includes/Includes.hpp>
+#include <Includes/Utils.hpp>
 #include <windows.h>
 #include <iostream>
 #include <thread>
-#include <Bypass/Manipulation/Bypass.hpp>
-#include <Bypass/Manipulation/reg.h>
-#include <Bypass/Manipulation/task.hpp>
 #include <skstr.hpp>
 
 using namespace std;
@@ -14,17 +12,7 @@ namespace Settings {
 
 	void CopyToClipboard(const char* text)
 	{
-		if (OpenClipboard(NULL)) {
-			EmptyClipboard();
-
-			size_t len = strlen(text) + 1;
-			HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
-			memcpy(GlobalLock(hMem), text, len);
-			GlobalUnlock(hMem);
-
-			SetClipboardData(CF_TEXT, hMem);
-			CloseClipboard();
-		}
+		Utils::PasteClipboard(text);
 	}
 
 	void Render() {

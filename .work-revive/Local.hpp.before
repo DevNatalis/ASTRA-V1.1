@@ -1,0 +1,311 @@
+#pragma once
+#include <Includes/includes.hpp>
+#include <windows.h>
+#include <iostream>
+#include <thread>
+#include <Includes/CustomWidgets/Notify.hpp>
+
+#include <Core/Core.hpp>
+#include <Core/Features/GodMode.hpp>
+#include <Core/Features/WeaponWheel.hpp>
+#include <Core/Features/Exploits/Exploits.hpp>
+#include <Core/Features/Exploits/HandlingEditor.hpp>
+#include <ImGui/Files/imgui_edited.hpp>
+
+using namespace std;
+
+namespace Local {
+
+	void Render()
+	{
+		int subLo = g_MenuInfo.SubPage[g_MenuInfo.Local];
+		bool vLo0 = (subLo < 0 || subLo == 0), vLo1 = (subLo < 0 || subLo == 1), vLo2 = (subLo < 0 || subLo == 2);
+		ImGui::BeginGroup();
+		{
+			// Primeira linha de seï¿½ï¿½es
+			if (vLo0) {
+			ImGui::BeginGroup();
+			{
+				// MAIN SECTION
+				ImGui::CustomBeginChild(xorstr("Geral"), xorstr("Configure Para Melhor Uso!"), ImVec2(228, 390), false, 0);
+				{
+					if (Custom::CheckBoxCfg(xorstr("GodMode"), &g_Config.Player->EnableGodMode, [&]() { static int KeyMode = 1; ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->GodModeKey, &KeyMode); }, true, xorstr("Modo furtivo: so cura quando a vida cai (menos detectavel)"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						Core::Features::g_GodMode.SetEnabled(g_Config.Player->EnableGodMode);
+						const bool applied = Core::SDK::Pointers::pLocalPlayer != nullptr;
+						NotifyManager::Send(applied ? std::string("GodMode ") +
+							(g_Config.Player->EnableGodMode ? "ativado" : "desativado") :
+							"Nao foi possivel aplicar GodMode ao jogador", 2000);
+					}
+
+					if (Custom::CheckBoxCfg(xorstr("NoClip"), &g_Config.Player->NoClipEnabled,
+						[&]() {
+							static int KeyMode = 1;
+							ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->NoClipKey, &KeyMode);
+							ImGui::SliderFloat(xorstr("Velocidade"), &g_Config.Player->NoClipSpeed, 0.1f, 20.f, xorstr("%1.2fm/s"));
+						}, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						Core::SDK::Pointers::pLocalPlayer->FreezePed(g_Config.Player->NoClipEnabled);
+						Core::SDK::Pointers::pLocalPlayer->bSetInvisibleLocal(g_Config.Player->NoClipEnabled);
+						NotifyManager::Send(std::string("NoClip ") + (g_Config.Player->NoClipEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBoxCfg(xorstr("Correr Rapido"), &g_Config.Player->FastRun, [&]() {
+						if (ImGui::SliderFloat(xorstr("Velocidade"), &g_Config.Player->RunSpeed, 1.f, 10.f, xorstr("%.1f m/s")))
+						{
+							if (g_Config.Player->FastRun)
+								Core::SDK::Pointers::pLocalPlayer->SetSpeed(g_Config.Player->RunSpeed);
+						}
+						}))
+					{
+						if (!g_Config.Player->FastRun) {
+							Core::SDK::Pointers::pLocalPlayer->SetSpeed(1.f);
+						}
+						NotifyManager::Send(std::string("Correr Rapido ") + (g_Config.Player->FastRun ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Anti Headshot"), &g_Config.Player->AntiHSEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::NoCriticalHits, g_Config.Player->AntiHSEnabled);
+						NotifyManager::Send(std::string("Anti Headshot ") + (g_Config.Player->AntiHSEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Encolher"), &g_Config.Player->ShrinkEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::Shrink, g_Config.Player->ShrinkEnabled);
+						NotifyManager::Send(std::string("Encolher ") + (g_Config.Player->ShrinkEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Sem Colisao"), &g_Config.Player->NoColisionEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						static std::chrono::steady_clock::time_point StartChrono = std::chrono::steady_clock::now();
+						std::chrono::steady_clock::time_point EndChrono = std::chrono::steady_clock::now();
+						std::chrono::duration<double> ElapsedSeconds = EndChrono - StartChrono;
+
+						if (ElapsedSeconds.count() >= 5.0)
+						{
+							{
+								uint64_t v1 = Mem.Read<uint64_t>(Core::SDK::Pointers::pLocalPlayer->GetNavigation() + 0x10);
+								uint64_t v2 = Mem.Read<uint64_t>(v1 + 0x20);
+								uint64_t v3 = Mem.Read<uint64_t>(v2 + 0x70);
+								uint64_t v4 = Mem.Read<uint64_t>(v3);
+								Mem.Write(v4 + 0x2C, g_Config.Player->NoColisionEnabled ? -0.9999f : 0.25f);
+							}
+						}
+						NotifyManager::Send(std::string("Sem Colisao ") + (g_Config.Player->NoColisionEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Soco Explosivo"), &g_Config.Player->ExploPunchEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						Core::SDK::Pointers::pLocalPlayer->explomeele(g_Config.Player->ExploPunchEnabled);
+						NotifyManager::Send(std::string("Soco Explosivo ") + (g_Config.Player->ExploPunchEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Sem RagDoll"), &g_Config.Player->NoRagDollEnabled))
+					{
+						Core::SDK::Pointers::pLocalPlayer->NoRagDoll(g_Config.Player->NoRagDollEnabled);
+						NotifyManager::Send(std::string("Sem RagDoll ") + (g_Config.Player->NoRagDollEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Roubar Carro"), &g_Config.Player->StealCarEnabled))
+					{
+						if (g_Config.Player->StealCarEnabled)
+						{
+							Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::NotAllowedToJackAnyPlayers, false);
+							Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::PlayerCanJackFriendlyPlayers, true);
+							Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::WillJackAnyPlayer, true);
+						}
+						else
+						{
+							Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::NotAllowedToJackAnyPlayers, true);
+							Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::PlayerCanJackFriendlyPlayers, false);
+							Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::WillJackAnyPlayer, false);
+						}
+						NotifyManager::Send(std::string("Roubar Carro ") + (g_Config.Player->StealCarEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("CombatRoll Infinito"), &g_Config.Player->InfiniteCombatRoll))
+					{
+						std::thread InfiniteCombatRoll([]() {
+							if (Core::SDK::Pointers::pLocalPlayer)
+								Core::SDK::Pointers::pLocalPlayer->SetInfCombatRoll(g_Config.Player->InfiniteCombatRoll);
+						});
+						InfiniteCombatRoll.detach();
+						NotifyManager::Send(std::string("CombatRoll Infinito ") + (g_Config.Player->InfiniteCombatRoll ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Stamina Infinita"), &g_Config.Player->InfiniteStamina, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						Core::SDK::Pointers::pLocalPlayer->SetInfStamina(g_Config.Player->InfiniteStamina);
+						NotifyManager::Send(std::string("Stamina Infinita ") + (g_Config.Player->InfiniteStamina ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Modo Coronha"), &g_Config.Player->CrouchMode, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						NotifyManager::Send(std::string("Modo Coronha ") + (g_Config.Player->CrouchMode ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Forcar Roda de Armas"), &g_Config.Player->ForceWeaponWheel))
+					{
+						Core::Features::g_WeaponWheel.SetEnabled(g_Config.Player->ForceWeaponWheel);
+						if (g_Config.Player->ForceWeaponWheel)
+							Core::Features::g_WeaponWheel.ForceWeaponWheel();
+						NotifyManager::Send(std::string("Forcar Roda de Armas ") + (g_Config.Player->ForceWeaponWheel ? "ativado" : "desativado"), 2000);
+					}
+				}
+				ImGui::CustomEndChild();
+			}
+			ImGui::EndGroup();
+			}
+
+			ImGui::SameLine();
+
+			if (vLo1) {
+			ImGui::BeginGroup();
+			{
+				// MISC SECTION
+				ImGui::CustomBeginChild(xorstr("Diversos"), xorstr("Ajustes Diversos!"), ImVec2(228, 390), false, 0);
+				{
+					if (Custom::CheckBox(xorstr("Super Jump"), &g_Config.Player->SuperJumpEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						if (Core::SDK::Pointers::pLocalPlayer)
+							Core::SDK::Pointers::pLocalPlayer->SuperJump(g_Config.Player->SuperJumpEnabled);
+						NotifyManager::Send(std::string("Super Jump ") + (g_Config.Player->SuperJumpEnabled ? "ativado" : "desativado"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Invisibilidade"), &g_Config.Player->Invisibilidade, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						if (Core::SDK::Pointers::pLocalPlayer) {
+							if (g_Config.Player->Invisibilidade) {
+								Core::SDK::Pointers::pLocalPlayer->bSetInvisibleLocal(true);
+							}
+							else {
+								Core::SDK::Pointers::pLocalPlayer->bSetInvisibleLocal(false);
+							}
+						}
+						NotifyManager::Send(std::string("Invisibilidade ") + (g_Config.Player->Invisibilidade ? "ativada" : "desativada"), 2000);
+					}
+
+					if (Custom::CheckBox(xorstr("Ativar FreeCam"), &g_Config.Player->FreeCamActivate, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					{
+						NotifyManager::Send(std::string("FreeCam ") + (g_Config.Player->FreeCamActivate ? "ativado" : "desativado"), 2000);
+					}
+
+					Custom::CheckBox(xorstr("FC Fov Customizado"), &g_Config.Player->FreeCamCustomFov, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION);
+
+					Custom::CheckBox(xorstr("FC Invisivel"), &Core::g_Config.Player->invisible_while_activate, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION);
+
+					ImGui::SliderFloat(xorstr("FC Quantidade Fov"), &g_Config.Player->FreeCamFovAmount, 1.f, 50.f, xorstr("%.1f m/s"));
+
+					ImGui::SliderFloat(xorstr("FC Velocidade"), &g_Config.Player->FreeCamSpeed, 1.f, 10.f, xorstr("%.1f m/s"));
+
+					ImGui::Spacing();
+					ImGui::Separator();
+					ImGui::Spacing();
+
+					if (Custom::Button("Reviver", ImVec2(-1, 30), 0)) {
+						if (Core::SDK::Pointers::pLocalPlayer) {
+							Core::SDK::Pointers::pLocalPlayer->SetHealth(Core::SDK::Pointers::pLocalPlayer->GetMaxHealth() > 0 ? Core::SDK::Pointers::pLocalPlayer->GetMaxHealth() : 200.f);
+							NotifyManager::Send("Voce foi revivido!", 2000);
+						}
+					}
+
+					if (Custom::Button("Curar (Vida Maxima)", ImVec2(-1, 30), 0)) {
+						if (Core::SDK::Pointers::pLocalPlayer) {
+							Core::SDK::Pointers::pLocalPlayer->SetHealth(Core::SDK::Pointers::pLocalPlayer->GetMaxHealth() > 0 ? Core::SDK::Pointers::pLocalPlayer->GetMaxHealth() : 200.f);
+							NotifyManager::Send("Vida restaurada!", 2000);
+						}
+					}
+
+					if (Custom::Button("Adicionar Colete", ImVec2(-1, 30), 0)) {
+						if (Core::SDK::Pointers::pLocalPlayer) {
+							Core::SDK::Pointers::pLocalPlayer->SetArmor(100.f);
+							NotifyManager::Send("Colete adicionado!", 2000);
+						}
+					}
+
+				}
+				ImGui::CustomEndChild();
+			}
+			ImGui::EndGroup();
+			}
+
+			// Teleports Section - Third column
+			ImGui::SameLine();
+
+			if (vLo2) {
+			ImGui::BeginGroup();
+			{
+				ImGui::CustomBeginChild(xorstr("Teleports"), xorstr("Locais de Teleporte!"), ImVec2(228, 390), false, 0);
+				{
+					struct Locations_t {
+						std::string Name;
+						D3DXVECTOR3 Coords;
+					};
+
+					std::vector<Locations_t> Locations = {
+						Locations_t(xorstr("Waypoint"), D3DXVECTOR3(0, 0, 0)),
+						Locations_t(xorstr("Praca"), D3DXVECTOR3(156.184f, -1043.17f, 29.3236f)),
+						Locations_t(xorstr("Maze Bank"), D3DXVECTOR3(-75.9527f, -818.262f, 50.59f)),
+						Locations_t(xorstr("Central Bank"), D3DXVECTOR3(221.781f, 217.278f, 106.705f)),
+						Locations_t(xorstr("Pier"), D3DXVECTOR3(-1847.72f, -1223.36f, 13.8745f)),
+						Locations_t(xorstr("Paleto Bay"), D3DXVECTOR3(-397.605f, 6047.57f, 32.1797f)),
+						Locations_t(xorstr("Cassino"), D3DXVECTOR3(885.322f, 16.8489f, 80.65f)),
+						Locations_t(xorstr("LS Airport"), D3DXVECTOR3(-975.532f, -2880.89f, 16.2665f)),
+						Locations_t(xorstr("Sandy Shores"), D3DXVECTOR3(1681.48f, 3251.91f, 40.809f)),
+						Locations_t(xorstr("Hospital"), D3DXVECTOR3(311.22f, -592.37f, 43.29f)),
+						Locations_t(xorstr("Legion Square"), D3DXVECTOR3(152.33f, -1001.86f, 29.32f)),
+						Locations_t(xorstr("Fort Zancudo"), D3DXVECTOR3(-2047.0f, 3132.0f, 32.82f)),
+					};
+
+					static int SeletedIndex = 0;
+					bool IsSelected;
+
+					ImGui::BeginChild(xorstr("Locations"), ImVec2(198, 240), false, 0);
+					{
+						ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(14, 6));
+						for (int i = 0; i < Locations.size(); i++)
+						{
+							IsSelected = SeletedIndex == i;
+							if (ImGui::ListSelectable(Locations[i].Name.c_str(), &IsSelected)) SeletedIndex = i;
+						}
+						ImGui::PopStyleVar();
+					}
+					ImGui::EndChild();
+
+					ImGui::Spacing();
+
+					auto Location = Locations[SeletedIndex];
+					std::string Loc = xorstr("Teleportar para ") + Location.Name;
+					if (Custom::Button(Loc.c_str(), ImVec2(198, 32), 0)) {
+						if (Core::SDK::Pointers::pLocalPlayer) {
+							Core::Features::g_GodMode.TeleportGuardBegin();
+							Core::SDK::Pointers::pLocalPlayer->FreezePed(true);
+						}
+						if (SeletedIndex == 0)
+						{
+							Core::Features::Exploits::TpToWaypoint();
+						}
+						else {
+							if (Core::SDK::Pointers::pLocalPlayer)
+								Core::SDK::Pointers::pLocalPlayer->SetPos(Location.Coords);
+						}
+						std::thread([]() {
+							std::this_thread::sleep_for(std::chrono::milliseconds(300));
+							if (Core::SDK::Pointers::pLocalPlayer) {
+								Core::Features::g_GodMode.TeleportGuardEnd(g_Config.Player->EnableGodMode);
+								Core::SDK::Pointers::pLocalPlayer->FreezePed(false);
+							}
+							NotifyManager::Send(xorstr("Teleportado!"), 2000);
+						}).detach();
+					}
+				}
+				ImGui::CustomEndChild();
+			}
+			ImGui::EndGroup();
+			}
+
+			// HANDLING EDITOR SECTION
+		}
+	}
+}

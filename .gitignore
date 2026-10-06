@@ -14,6 +14,7 @@ packages/
 *.obj
 *.exe
 *.dll
+*.rar
 *.pdb
 *.ilk
 *.iobj
@@ -32,3 +33,7 @@ packages/
 !.env.example
 *.pem
 *.key
+!src/Security/Api/curl/Debug/
+!src/Security/Api/curl/Debug/libcurl.lib
+!src/Includes/ImGui/Files/FreeType/win64/Debug/
+!src/Includes/ImGui/Files/FreeType/win64/Debug/freetype.lib

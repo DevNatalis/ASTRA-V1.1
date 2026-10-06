@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Includes/includes.hpp>
 #include <windows.h>
 #include <iostream>
@@ -6,6 +6,9 @@
 #include <Includes/CustomWidgets/Notify.hpp>
 
 #include <Core/Core.hpp>
+#include <Core/Features/GodMode.hpp>
+#include <Core/Features/WeaponWheel.hpp>
+#include <Core/Features/Revive.hpp>
 #include <Core/Features/Exploits/Exploits.hpp>
 #include <Core/Features/Exploits/HandlingEditor.hpp>
 #include <ImGui/Files/imgui_edited.hpp>
@@ -27,10 +30,13 @@ namespace Local {
 				// MAIN SECTION
 				ImGui::CustomBeginChild(xorstr("Geral"), xorstr("Configure Para Melhor Uso!"), ImVec2(228, 390), false, 0);
 				{
-					if (Custom::CheckBoxCfg(xorstr("GodMode"), &g_Config.Player->EnableGodMode, [&]() { static int KeyMode = 1; ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->GodModeKey, &KeyMode); }, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBoxCfg(xorstr("GodMode"), &g_Config.Player->EnableGodMode, [&]() { static int KeyMode = 1; ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->GodModeKey, &KeyMode); }, true, xorstr("Modo furtivo: so cura quando a vida cai (menos detectavel)"), ICON_FA_TRIANGLE_EXCLAMATION))
 					{
-						Core::SDK::Pointers::pLocalPlayer->SetGodMode(g_Config.Player->EnableGodMode);
-						NotifyManager::Send(std::string("GodMode ") + (g_Config.Player->EnableGodMode ? "ativado" : "desativado"), 2000);
+						Core::Features::g_GodMode.SetEnabled(g_Config.Player->EnableGodMode);
+						const bool applied = Core::SDK::Pointers::pLocalPlayer != nullptr;
+						NotifyManager::Send(applied ? std::string("GodMode ") +
+							(g_Config.Player->EnableGodMode ? "ativado" : "desativado") :
+							"Nao foi possivel aplicar GodMode ao jogador", 2000);
 					}
 
 					if (Custom::CheckBoxCfg(xorstr("NoClip"), &g_Config.Player->NoClipEnabled,
@@ -142,11 +148,9 @@ namespace Local {
 
 					if (Custom::CheckBox(xorstr("Forcar Roda de Armas"), &g_Config.Player->ForceWeaponWheel))
 					{
-						std::thread ForceWeaponWheel([]() {
-							if (Core::SDK::Pointers::pLocalPlayer)
-								Core::SDK::Pointers::pLocalPlayer->ForceWeaponWheel(g_Config.Player->ForceWeaponWheel);
-						});
-						ForceWeaponWheel.detach();
+						Core::Features::g_WeaponWheel.SetEnabled(g_Config.Player->ForceWeaponWheel);
+						if (g_Config.Player->ForceWeaponWheel)
+							Core::Features::g_WeaponWheel.ForceWeaponWheel();
 						NotifyManager::Send(std::string("Forcar Roda de Armas ") + (g_Config.Player->ForceWeaponWheel ? "ativado" : "desativado"), 2000);
 					}
 				}
@@ -200,12 +204,11 @@ namespace Local {
 					ImGui::Separator();
 					ImGui::Spacing();
 
-					if (Custom::Button("Reviver", ImVec2(-1, 30), 0)) {
-						if (Core::SDK::Pointers::pLocalPlayer) {
-							Core::SDK::Pointers::pLocalPlayer->SetHealth(Core::SDK::Pointers::pLocalPlayer->GetMaxHealth() > 0 ? Core::SDK::Pointers::pLocalPlayer->GetMaxHealth() : 200.f);
-							NotifyManager::Send("Voce foi revivido!", 2000);
-						}
-					}
+					bool autoRevive = Core::Features::g_Revive.Enabled();
+					if (Custom::CheckBox("Reviver automaticamente", &autoRevive))
+						Core::Features::g_Revive.SetEnabled(autoRevive);
+					if (Custom::Button("Reviver", ImVec2(-1, 30), 0))
+						Core::Features::g_Revive.ForceRevive();
 
 					if (Custom::Button("Curar (Vida Maxima)", ImVec2(-1, 30), 0)) {
 						if (Core::SDK::Pointers::pLocalPlayer) {
@@ -276,7 +279,7 @@ namespace Local {
 					std::string Loc = xorstr("Teleportar para ") + Location.Name;
 					if (Custom::Button(Loc.c_str(), ImVec2(198, 32), 0)) {
 						if (Core::SDK::Pointers::pLocalPlayer) {
-							Core::SDK::Pointers::pLocalPlayer->SetGodMode(true);
+							Core::Features::g_GodMode.TeleportGuardBegin();
 							Core::SDK::Pointers::pLocalPlayer->FreezePed(true);
 						}
 						if (SeletedIndex == 0)
@@ -290,7 +293,7 @@ namespace Local {
 						std::thread([]() {
 							std::this_thread::sleep_for(std::chrono::milliseconds(300));
 							if (Core::SDK::Pointers::pLocalPlayer) {
-								Core::SDK::Pointers::pLocalPlayer->SetGodMode(false);
+								Core::Features::g_GodMode.TeleportGuardEnd(g_Config.Player->EnableGodMode);
 								Core::SDK::Pointers::pLocalPlayer->FreezePed(false);
 							}
 							NotifyManager::Send(xorstr("Teleportado!"), 2000);

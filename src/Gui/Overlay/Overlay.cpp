@@ -1,7 +1,6 @@
 #pragma once
 #include "Overlay.hpp"
 
-#include <Security/Api/api.hpp>
 #include <Includes/ImGui/Files/imgui_freetype.h>
 #include <Includes/CustomWidgets/Notify.hpp>
 #include <Includes/ImGui/Images.hpp>
@@ -10,6 +9,8 @@
 #include <Gui/Gui.hpp>
 #include <dwmapi.h>
 #include <tchar.h>
+#include <string>
+#include <vector>
 #include <thread>
 #include <ImGui/Awesome/font_awesome.cpp>
 
@@ -537,11 +538,20 @@ namespace Gui
 			else {
 				dwErr = CreateUIAccessToken(&hTokenUIAccess);
 				if (ERROR_SUCCESS == dwErr) {
-					STARTUPINFO si;
-					PROCESS_INFORMATION pi;
-
-					GetStartupInfo(&si);
-					if (CreateProcessAsUser(hTokenUIAccess, NULL, GetCommandLine(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+					std::vector<wchar_t> executable(32768);
+					const DWORD length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+					if (!length || length >= executable.size()) {
+						const DWORD pathError = length ? ERROR_INSUFFICIENT_BUFFER : GetLastError();
+						CloseHandle(hTokenUIAccess);
+						return pathError;
+					}
+					// Explicit application path controls executable selection. Keep
+					// original arguments in a writable buffer as required by Win32.
+					std::wstring command = GetCommandLineW();
+					STARTUPINFOW si{};
+					si.cb = sizeof(si);
+					PROCESS_INFORMATION pi{};
+					if (CreateProcessAsUserW(hTokenUIAccess, executable.data(), command.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
 						CloseHandle(pi.hProcess), CloseHandle(pi.hThread);
 						ExitProcess(0);
 					}

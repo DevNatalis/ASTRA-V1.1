@@ -20,10 +20,11 @@ constexpr int CF_TEXT = 1, HKEY_CURRENT_USER = 1, RRF_RT_REG_SZ = 1, ERROR_SUCCE
 bool openOk, dataOk, lockOk;
 int closes, unlocks;
 char data[8];
+SIZE_T capacity = sizeof(data);
 bool OpenClipboard(void*) { return openOk; }
 bool CloseClipboard() { ++closes; return true; }
 HANDLE GetClipboardData(int) { return dataOk ? data : nullptr; }
-SIZE_T GlobalSize(HANDLE) { return sizeof(data); }
+SIZE_T GlobalSize(HANDLE) { return capacity; }
 void* GlobalLock(HANDLE) { return lockOk ? data : nullptr; }
 bool GlobalUnlock(HANDLE) { ++unlocks; return true; }
 const char* xorstr(const char* s) { return s; }
@@ -51,10 +52,12 @@ int main() {
         assert(closes == (openOk ? 1 : 0));
         assert(unlocks == (scenario >= 3 ? 1 : 0));
     }
+    capacity = 1024 * 1024 + 1; closes = unlocks = 0;
+    assert(GetClipboard().empty()); assert(closes == 1 && unlocks == 0);
     required = 255; assert(ReadRegistry().size() == 254);
     required = 256; assert(ReadRegistry().empty());
     required = 8192; assert(ReadRegistry().empty());
-    std::cout << "9 regression cases passed\n";
+    std::cout << "10 regression cases passed\n";
 }
 '''
 vcvars = Path(r'C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat')

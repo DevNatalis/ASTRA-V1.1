@@ -20,7 +20,8 @@ struct License {
     std::string user, subscription, expiry;
 };
 
-// Reject incomplete responses. A license must have an explicit future expiry.
+// Require every entry to have a valid schema, and at least one future expiry.
+// Zero is not a lifetime license; no implicit lifetime convention is supported.
 inline bool ParseLicense(const nlohmann::json& response, std::int64_t now, License& result) {
     result = {};
     if (now <= 0) return false;
@@ -30,19 +31,21 @@ inline bool ParseLicense(const nlohmann::json& response, std::int64_t now, Licen
         const auto user = info.at("username").get<std::string>();
         const auto& subscriptions = info.at("subscriptions");
         if (user.empty() || !subscriptions.is_array() || subscriptions.empty()) return false;
+        License candidate;
         for (const auto& sub : subscriptions) {
-            try {
                 const auto name = sub.at("subscription").get<std::string>();
                 const auto expiry = sub.at("expiry").get<std::string>();
                 if (name.empty() || expiry.empty() || expiry.find_first_not_of("0123456789") != std::string::npos)
-                    continue;
+                    return false;
                 size_t consumed = 0;
                 const auto timestamp = std::stoll(expiry, &consumed);
-                if (consumed != expiry.size() || timestamp <= now) continue;
-                result = { user, name, expiry };
-                return true;
-            } catch (...) { /* An invalid entry never grants access. */ }
+                if (consumed != expiry.size() || timestamp <= 0) return false;
+                if (timestamp > now && candidate.user.empty())
+                    candidate = { user, name, expiry };
         }
+        if (candidate.user.empty()) return false;
+        result = candidate;
+        return true;
     } catch (...) {}
     return false;
 }
