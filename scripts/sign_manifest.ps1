@@ -33,10 +33,15 @@ if (-not (Test-Path $KeyPath)) { throw "Private key not found: $KeyPath" }
 
 $hash = (Get-FileHash -Path $ExePath -Algorithm SHA256).Hash.ToLower()
 $payload = "$Version`n$hash`n$Url"
+# Do not use the PowerShell -Encoding parameter here: utf8NoBOM exists in
+# PowerShell 7 but is not accepted by Windows PowerShell 5.1 (the CI shell).
+# This encoding is also used for the signed payload so its byte representation
+# is identical on both hosts.
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $payloadPath = [IO.Path]::GetTempFileName()
 $sigPath = [IO.Path]::GetTempFileName()
 try {
-    [IO.File]::WriteAllText($payloadPath, $payload)
+    [IO.File]::WriteAllText($payloadPath, $payload, $utf8NoBom)
     & openssl dgst -sha256 -sign $KeyPath -out $sigPath $payloadPath
     if ($LASTEXITCODE -ne 0) { throw 'openssl signing failed.' }
     $sigBytes = [IO.File]::ReadAllBytes($sigPath)
@@ -52,7 +57,8 @@ try {
     if ($MinVersion) { $manifest['min_version'] = $MinVersion }
     if ($Status) { $manifest['status'] = $Status }
     if ($Notes) { $manifest['notes'] = $Notes }
-    ($manifest | ConvertTo-Json -Compress) | Out-File -FilePath $Out -Encoding utf8NoBOM
+    $manifestJson = $manifest | ConvertTo-Json -Compress
+    [IO.File]::WriteAllText($Out, $manifestJson, $utf8NoBom)
     Write-Host "manifest.json written to: $Out"
     Write-Host "payload: $($payload -replace "`n", '\n')"
 } finally {

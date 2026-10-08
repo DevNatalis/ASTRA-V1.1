@@ -106,7 +106,8 @@ jobs:
           if ($cfg -notmatch [regex]::Escape('"' + $ver + '"')) {
             throw "Tag $tag does not match UpdateConfig kAppVersion. Bump the version first."
           }
-          echo "RELEASE_VERSION=$ver" >> $env:GITHUB_ENV
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          [IO.File]::AppendAllText($env:GITHUB_ENV, "RELEASE_VERSION=$ver`n", $utf8NoBom)
 
       - name: Build ASTRA (Release x64)
         run: msbuild src/src.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
@@ -125,17 +126,50 @@ jobs:
           }
           $keyPath = Join-Path $env:RUNNER_TEMP 'update_priv.pem'
           try {
-            $env:UPDATE_SIGNING_KEY | Out-File -FilePath $keyPath -Encoding ascii -NoNewline
+            # Use .NET instead of PowerShell's version-dependent -Encoding
+            # values. PEM is ASCII and must be written without a BOM or an
+            # extra newline.
+            [IO.File]::WriteAllText($keyPath, $env:UPDATE_SIGNING_KEY, [Text.Encoding]::ASCII)
             $repo = '${{ github.repository }}'
             $url = "https://github.com/$repo/releases/download/v$env:RELEASE_VERSION/ASTRA.exe"
             powershell -ExecutionPolicy Bypass -File scripts/sign_manifest.ps1 `
               -ExePath src/x64/Release/ASTRA.exe -Version $env:RELEASE_VERSION `
               -Url $url -KeyPath $keyPath -Out manifest.json `
               -Status 'Disponivel' -Notes "Release v$env:RELEASE_VERSION"
+            if ($LASTEXITCODE -ne 0) { throw 'Manifest signing script failed.' }
+
+            # Verify the exact release manifest before publishing it.  The
+            # private key and all derived temporary material remain in
+            # RUNNER_TEMP and are removed below.
+            $manifestBytes = [IO.File]::ReadAllBytes('manifest.json')
+            if ($manifestBytes.Length -ge 3 -and $manifestBytes[0] -eq 0xEF -and
+                $manifestBytes[1] -eq 0xBB -and $manifestBytes[2] -eq 0xBF) {
+              throw 'manifest.json must be UTF-8 without a BOM.'
+            }
+            $manifest = Get-Content -Path manifest.json -Raw | ConvertFrom-Json
+            $actualHash = (Get-FileHash -Path src/x64/Release/ASTRA.exe -Algorithm SHA256).Hash.ToLower()
+            if ($manifest.sha256 -ne $actualHash) { throw 'Manifest SHA-256 does not match ASTRA.exe.' }
+
+            $payloadPath = Join-Path $env:RUNNER_TEMP 'update_payload.txt'
+            $signaturePath = Join-Path $env:RUNNER_TEMP 'update_signature.bin'
+            $publicKeyPath = Join-Path $env:RUNNER_TEMP 'update_pub.pem'
+            try {
+              $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+              $payload = "$($manifest.version)`n$($manifest.sha256)`n$($manifest.url)"
+              [IO.File]::WriteAllText($payloadPath, $payload, $utf8NoBom)
+              [IO.File]::WriteAllBytes($signaturePath, [Convert]::FromBase64String($manifest.signature))
+              & openssl pkey -in $keyPath -pubout -out $publicKeyPath
+              if ($LASTEXITCODE -ne 0) { throw 'Could not derive the manifest verification key.' }
+              & openssl dgst -sha256 -verify $publicKeyPath -signature $signaturePath $payloadPath
+              if ($LASTEXITCODE -ne 0) { throw 'Manifest RSA signature verification failed.' }
+            } finally {
+              Remove-Item $payloadPath, $signaturePath, $publicKeyPath -Force -ErrorAction SilentlyContinue
+            }
           } finally {
             if (Test-Path $keyPath) { Remove-Item $keyPath -Force }
           }
-          Get-Content manifest.json
+          # Read for the CI log only; do not round-trip or rewrite signed data.
+          Get-Content -Path manifest.json -Raw
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
