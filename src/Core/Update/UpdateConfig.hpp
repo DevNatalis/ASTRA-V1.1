@@ -29,7 +29,7 @@ namespace Update {
 #ifdef ASTRA_APP_VERSION
 inline const char* InstalledVersion() { return ASTRA_APP_VERSION; }
 #else
-inline const char* InstalledVersion() { return "1.0.0"; }
+inline const char* InstalledVersion() { return "1.0.1"; }
 #endif
 
 inline std::string InstalledVersionStr() { return InstalledVersion(); }
