@@ -677,7 +677,10 @@ void Gui::Rendering()
 
 			}
 		}
-		else {
+		// Logged but still on the launcher: Shell/launcher already drawn above,
+		// nothing else to draw here. Login draws ONLY when logged out — never
+		// over the launcher (that overlap froze input and doubled draw cost).
+		else if (!g_MenuInfo.IsLogged) {
 		{
 			// KeyAuth init: executa uma vez por sessao antes de liberar os campos.
 			static bool kaInitAttempted = false;
