@@ -7,6 +7,8 @@
     <Filter Include="Core" />
     <Filter Include="Core\Features" />
     <Filter Include="Core\Features\Exploits" />
+    <Filter Include="Core\Features\Guard" />
+    <Filter Include="Core\Update" />
     <Filter Include="Core\SDK" />
     <Filter Include="Core\SDK\Network" />
     <Filter Include="Core\SDK\Structs" />
@@ -63,6 +65,30 @@
     </ClInclude>
     <ClInclude Include="Core\Features\Exploits\GiveWeapon.hpp">
       <Filter>Core\Features\Exploits</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Guard\FeatureGuard.hpp">
+      <Filter>Core\Features\Guard</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Guard\SessionProfile.hpp">
+      <Filter>Core\Features\Guard</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Guard\TimingJitter.hpp">
+      <Filter>Core\Features\Guard</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Guard\ValueSmoother.hpp">
+      <Filter>Core\Features\Guard</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Update\UpdateConfig.hpp">
+      <Filter>Core\Update</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Update\UpdateCrypto.hpp">
+      <Filter>Core\Update</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Update\UpdateManifest.hpp">
+      <Filter>Core\Update</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Update\UpdateManager.hpp">
+      <Filter>Core\Update</Filter>
     </ClInclude>
     <ClInclude Include="Core\Features\SilentAim.hpp">
       <Filter>Core\Features</Filter>
@@ -167,6 +193,9 @@
       <Filter>Auth</Filter>
     </ClInclude>
     <ClInclude Include="Gui\Pages\Login.hpp">
+      <Filter>Gui\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui\Pages\Launcher.hpp">
       <Filter>Gui\Pages</Filter>
     </ClInclude>
     <ClInclude Include="Gui\Pages\Settings.hpp">

@@ -27,6 +27,19 @@ namespace Core
 					g_Variables.g_vGameWindowPos = WindowInfo.first;
 					g_Variables.g_vGameWindowCenter = { g_Variables.g_vGameWindowSize.x / 2, g_Variables.g_vGameWindowSize.y / 2 };
 
+					// RESPONSIVENESS: MoveWindow(..., repaint=true) every 300ms
+					// forces a full repaint/DWM churn even when nothing moved.
+					// Only reposition on actual change.
+					static ImVec2 lastPos{ -1.0f, -1.0f };
+					static ImVec2 lastSize{ -1.0f, -1.0f };
+					const ImVec2& pos = g_Variables.g_vGameWindowPos;
+					const ImVec2& size = g_Variables.g_vGameWindowSize;
+					if (pos.x == lastPos.x && pos.y == lastPos.y &&
+						size.x == lastSize.x && size.y == lastSize.y)
+						return;
+					lastPos = pos;
+					lastSize = size;
+
 					MoveWindow(g_Variables.g_hCheatWindow, g_Variables.g_vGameWindowPos.x, g_Variables.g_vGameWindowPos.y,
 						g_Variables.g_vGameWindowSize.x, g_Variables.g_vGameWindowSize.y - 1, true);
 				}

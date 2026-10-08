@@ -25,10 +25,19 @@ namespace Core
         public:
             void Update( )
             {
+                // RESPONSIVENESS: a full pass does one ReadString + several
+                // RPM reads per vehicle plus a sort. At 1ms cadence that
+                // burns CPU/IPC for lists the UI reads at most a few times
+                // per second. Gate full scans to ~10Hz.
+                uint64_t lastScan = 0;
                 while ( true )
                 {
-
-                    std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+                    const uint64_t nowMs = GetTickCount64();
+                    if (nowMs - lastScan < 100) {
+                        std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
+                        continue;
+                    }
+                    lastScan = nowMs;
 
 
                     if ( !Core::SDK::Pointers::pReplayInterFace )
@@ -54,7 +63,7 @@ namespace Core
                         continue;
 
                     if ( !MaxVehicles )
-                        MaxVehicles = Guard::ClampCount(VehInterface->MaxVehicles( ), 512);
+                        MaxVehicles = ::Guard::ClampCount(VehInterface->MaxVehicles( ), 512);
                     if (MaxVehicles <= 0)
                         continue;
 
@@ -66,7 +75,7 @@ namespace Core
                     for ( int i = 0; i < MaxVehicles; i++ )
                     {
                         CVehicle * CurrentVeh = VehList->Vehicle( i );
-                        if (!Guard::IsRemotePtr((uintptr_t)CurrentVeh))
+                        if (!::Guard::IsRemotePtr((uintptr_t)CurrentVeh))
                             continue;
 
                         //if ( CurrentVeh == Core::SDK::Pointers::pLocalPlayer->GetLastVehicle( ) )
@@ -75,7 +84,7 @@ namespace Core
                         uintptr_t vehicleModelInfo = Mem.Read<uintptr_t>( ( uintptr_t ) CurrentVeh + 0x20 );
                         // STABILITY: model nulo -> ReadString(0x298) faria 256 leituras
                         // remotas no endereco baixo. Pula antes.
-                        if (!Guard::IsRemotePtr(vehicleModelInfo))
+                        if (!::Guard::IsRemotePtr(vehicleModelInfo))
                             continue;
                         std::string vehicleName = Mem.ReadString( vehicleModelInfo + 0x298 );
                         D3DXVECTOR3 DistanceCalculation = CurrentVeh->GetPos( ) - Core::SDK::Pointers::pLocalPlayer->GetPos( );

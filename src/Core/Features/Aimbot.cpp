@@ -1,10 +1,12 @@
 #include "Aimbot.hpp"
+#include <Auth/auth_manager.hpp>
+#include <Core/Features/Guard/FeatureGuard.hpp>
 
 #ifdef USE_VMPROTECT
 #include "VMProtectSDK.h"
 #endif
 
-// Función para calcular SmoothStep sin interferencia de VMProtect
+// Funciï¿½n para calcular SmoothStep sin interferencia de VMProtect
 __declspec(noinline) float GetSmoothStep(float SmoothFactor) {
     if (SmoothFactor > 0) {
         if (SmoothFactor >= 98 && SmoothFactor <= 100) return 0.1f / SmoothFactor;
@@ -37,16 +39,11 @@ void Core::Features::cAimbot::SetViewAngles(CPed* Ped, D3DXVECTOR3 BonePos)
     // Guardamos SmoothFactor en una variable local antes de usarlo
     float SmoothFactor = std::clamp(static_cast<float>(g_Config.Aimbot->AimbotSpeed), 0.0f, 100.0f);
 
-    // Debug: Imprimir valores para ver si VMProtect los altera
-    std::cout << "SmoothFactor (from Config): " << g_Config.Aimbot->AimbotSpeed << std::endl;
-    std::cout << "SmoothFactor (Local): " << SmoothFactor << std::endl;
+    // Read the smoothing step once per aim pass (no console IO here:
+    // std::cout in this hot path stalled every write by milliseconds).
+    const float LocalSmoothStep = GetSmoothStep(SmoothFactor);
 
-    // Forzar lectura correcta del SmoothStep desde memoria
-    volatile float LocalSmoothStep = GetSmoothStep(SmoothFactor);
-
-    std::cout << "SmoothStep: " << LocalSmoothStep << std::endl; // Para depuración
-
-    // Aplicar interpolación de ángulos
+    // Aplicar interpolaciï¿½n de ï¿½ngulos
     FinalAngles.x = CurrentViewAngles.x + (TargetViewAngles.x - CurrentViewAngles.x) * LocalSmoothStep;
     FinalAngles.y = CurrentViewAngles.y + (TargetViewAngles.y - CurrentViewAngles.y) * LocalSmoothStep;
     FinalAngles.z = CurrentViewAngles.z + (TargetViewAngles.z - CurrentViewAngles.z) * LocalSmoothStep;
@@ -70,11 +67,21 @@ void Core::Features::cAimbot::Start()
 
     while (true)
     {
-        if (g_Config.Aimbot->Enabled && g_Config.Aimbot->KeyBind && (GetAsyncKeyState(g_Config.Aimbot->KeyBind) & 0x8000) && GetForegroundWindow() != g_Variables.g_hCheatWindow)
+        // FeatureGuard: distribui as escritas de view-angles no tempo
+        // (estabilidade: evita rajadas de escrita a cada frame).
+        static Core::Guard::TimingJitter aimJitter(30, 90);
+        if (!aimJitter.Ready()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+
+        // Session gate (defense in depth): no view-angle writes without a
+        // valid server session, even if config flags are flipped in memory.
+        if (g_Auth.IsSessionValid() && g_Config.Aimbot->Enabled && g_Config.Aimbot->KeyBind && (GetAsyncKeyState(g_Config.Aimbot->KeyBind) & 0x8000) && GetForegroundWindow() != g_Variables.g_hCheatWindow)
         {
             CPed* Ped = Core::SDK::Game::GetClosestPed(g_Config.Aimbot->MaxDistance, g_Config.Aimbot->IgnoreNPCs, g_Config.Aimbot->OnlyVisible);
             if (!Ped) {
-                std::this_thread::sleep_for(std::chrono::nanoseconds(1)); // Evitar consumo innecesario
+                std::this_thread::sleep_for(std::chrono::milliseconds(1)); // idle: yield instead of spinning
                 continue;
             }
 
@@ -91,7 +98,7 @@ void Core::Features::cAimbot::Start()
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::nanoseconds(1)); // Mejora rendimiento sin afectar la suavidad
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // idle yield; cadence is driven by aimJitter above
     }
 
 #ifdef USE_VMPROTECT

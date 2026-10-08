@@ -14,6 +14,7 @@
 #include <Includes/Includes.hpp>
 #include <Core/Offsets.hpp>
 #include <Core/SDK/SDK.hpp>
+#include <Core/Features/Guard/FeatureGuard.hpp>
 
 #include <chrono>
 #include <cstdlib>
@@ -47,6 +48,7 @@ namespace Core
 					SeedOnce();
 					ticksSinceHeal_ = MinTicksBetweenHeals; // permite agir de imediato se ja estiver baixo
 					lastHealth_ = 0.0f;
+					Core::Guard::ValueSmoother::Reset(smoothTick_);
 				}
 			}
 
@@ -121,8 +123,9 @@ namespace Core
 
 				// Regra 3 — dano leve: aceita, nada a fazer (default).
 
-				// Armor passiva (antes de health seria no restore; aqui e upkeep raro).
-				if (RestoreArmor && ticksSinceHeal_ >= MinTicksBetweenHeals * 2)
+				// Armor passiva (antes de health seria no restore; aqui e upkeep raro,
+				// distribuido no tempo via FeatureGuard para estabilidade).
+				if (RestoreArmor && ticksSinceHeal_ >= MinTicksBetweenHeals * 2 && healJitter_.Ready())
 				{
 					const float armor = Mem.Read<float>(base + armorOff);
 					if (armor >= 0.0f && armor < 15.0f)
@@ -190,6 +193,10 @@ namespace Core
 			uint32_t ticksSinceHeal_ = 0;
 			float lastHealth_ = 0.0f;
 			std::chrono::steady_clock::time_point lastTick_{};
+			// FeatureGuard: escrita gradual do heal + distribuicao temporal
+			// do upkeep de armor (estabilidade: sem saltos bruscos de valor).
+			int smoothTick_ = 0;
+			Core::Guard::TimingJitter healJitter_{ 100, 300 };
 
 			static void SeedOnce()
 			{
@@ -234,9 +241,15 @@ namespace Core
 				if (curMax < maxHealth - 0.1f)
 					Mem.Write<float>(ped + maxOff, maxHealth);
 
-				// 5. Escreve health.
-				Mem.Write<float>(ped + kHealth, target);
-				lastHealth_ = target;
+				// 5. Escreve health de forma gradual (FeatureGuard): interpola
+				// o valor atual ate o alvo em N ticks por sessao, evitando
+				// saltos bruscos e distribuindo as escritas no tempo.
+				float smoothed = Core::Guard::ValueSmoother::Next(
+					current, target, smoothTick_,
+					Core::Guard::ValueSmoother::Config{
+						Core::Guard::SessionProfile::GodModeHealTick(), 0.15f, 0.5f });
+				Mem.Write<float>(ped + kHealth, smoothed);
+				lastHealth_ = smoothed;
 			}
 
 			void ClearFlags()
@@ -248,6 +261,7 @@ namespace Core
 					Mem.Write<BYTE>(reinterpret_cast<uintptr_t>(ped) + kGodNative, 0);
 				ticksSinceHeal_ = 0;
 				lastHealth_ = 0.0f;
+				Core::Guard::ValueSmoother::Reset(smoothTick_);
 				forcedFlag_ = false;
 			}
 		};

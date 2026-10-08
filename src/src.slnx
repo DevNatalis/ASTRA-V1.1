@@ -4,4 +4,5 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="src.vcxproj" Id="30ddb2ea-876d-48c0-8cc5-8c6db8334bd2" />
+  <Project Path="Updater/Updater.vcxproj" Id="7a3e5b91-4c2d-4f8a-9e6d-1b2c3d4e5f60" />
 </Solution>

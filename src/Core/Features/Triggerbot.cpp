@@ -1,4 +1,6 @@
 #include "Triggerbot.hpp"
+#include <Auth/auth_manager.hpp>
+#include <Core/Features/Guard/FeatureGuard.hpp>
 
 void Core::Features::cTriggerbot::Shoot( int delay )
 {
@@ -12,8 +14,15 @@ void Core::Features::cTriggerbot::Start( )
 {
 	while ( true )
 	{
-		
-		if ( g_Config.TriggerBot->Enabled && g_Config.TriggerBot->KeyBind && GetAsyncKeyState(g_Config.TriggerBot->KeyBind) & 0x8000 && GetForegroundWindow() != g_Variables.g_hCheatWindow)
+		// FeatureGuard: distribui os disparos no tempo (estabilidade:
+		// evita rajadas de escrita/acao a cada frame).
+		static Core::Guard::TimingJitter triggerJitter(45, 80);
+		if (!triggerJitter.Ready()) {
+			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+			continue;
+		}
+
+		if ( g_Auth.IsSessionValid() && g_Config.TriggerBot->Enabled && g_Config.TriggerBot->KeyBind && GetAsyncKeyState(g_Config.TriggerBot->KeyBind) & 0x8000 && GetForegroundWindow() != g_Variables.g_hCheatWindow)
 		{
 			if (!g_Config.TriggerBot->SmartTrigger)
 			{
@@ -45,6 +54,6 @@ void Core::Features::cTriggerbot::Start( )
 			}
 			
 		}
-		std::this_thread::sleep_for( std::chrono::nanoseconds( 1 ) );
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) ); // idle yield; cadence is driven by triggerJitter above
 	}
 }

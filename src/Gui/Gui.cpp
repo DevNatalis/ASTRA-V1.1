@@ -15,11 +15,26 @@
 #include <Gui/Pages/World.hpp>
 #include <Gui/Pages/Settings.hpp>
 #include <Gui/Pages/Login.hpp>
+#include <Gui/Pages/Launcher.hpp>
 
 #include <Core/Features/Exploits/Exploits.hpp>
 #include <Core/Features/GodMode.hpp>
 #include <Core/Features/WeaponWheel.hpp>
 #include <Core/Features/Revive.hpp>
+#include <Core/Features/Smooth/SmoothHealth.hpp>
+#include <Core/Features/Smooth/SmoothArmor.hpp>
+#include <Core/Features/Smooth/SmoothVehicleHealth.hpp>
+#include <Core/Features/Smooth/SmoothStamina.hpp>
+#include <Core/Features/Smooth/SmoothTeleport.hpp>
+#include <Core/Features/Smooth/SmoothSpeed.hpp>
+#include <Core/Features/Smooth/SmoothNoClip.hpp>
+#include <Core/Features/Smooth/SmoothHandling.hpp>
+#include <Core/Features/Smooth/ControlActionOverride.hpp>
+#include <Core/Features/Smooth/ControlBitmapCleaner.hpp>
+#include <Core/Features/Smooth/SmoothRecoil.hpp>
+#include <Core/Features/Smooth/SmoothSpread.hpp>
+#include <Core/Features/Smooth/SmoothAimAssist.hpp>
+#include <Core/Features/Smooth/SmoothTrigger.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
 #include <Core/Features/Esp.hpp>
 
@@ -420,7 +435,10 @@ void Gui::Rendering()
 				g_MenuInfo.sidebarSelectedIconColor = rgbColor;
 			}
 
-			ReferenceMenu::Shell();
+			if (Launcher::IsInjected())
+				ReferenceMenu::Shell();
+			else if (Launcher::Render())
+				Gui::CloseRequested = true;
 		}
 
 		static bool auth_flag = false;
@@ -439,7 +457,7 @@ void Gui::Rendering()
 		ImGuiStyle* style = &ImGui::GetStyle();
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, g_MenuInfo.TabAlpha * openA * style->Alpha);
 
-		if (g_MenuInfo.IsLogged)
+		if (g_MenuInfo.IsLogged && Launcher::IsInjected())
 		{
 
             ImGui::SetCursorPos(ImVec2(ReferenceMenu::SidebarWidth + 14, ReferenceMenu::Top));
@@ -518,6 +536,29 @@ void Gui::Rendering()
 					if (g_Config.Player->ForceWeaponWheel)
 						Core::Features::g_WeaponWheel.Tick();
 					wheelWasEnabled = g_Config.Player->ForceWeaponWheel;
+				}
+
+				// Smooth state-stability layer: one Tick per feature per
+				// frame. Each Tick throttles internally (30ms), writes at
+				// most once, skips when current == target, and applies
+				// jitter (+/-10%) plus 2s cooldown where applicable.
+				if (g_Auth.IsSessionValid() && Core::SDK::Pointers::pLocalPlayer) {
+					const uintptr_t smoothPed = reinterpret_cast<uintptr_t>(
+						static_cast<CPed*>(Core::SDK::Pointers::pLocalPlayer));
+					Core::Features::Smooth::g_SmoothHealth.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothArmor.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothVehicleHealth.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothStamina.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothTeleport.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothSpeed.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothNoClip.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothHandling.Tick(smoothPed);
+					Core::Features::Smooth::g_ControlActionOverride.Tick(smoothPed);
+					Core::Features::Smooth::g_ControlBitmapCleaner.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothRecoil.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothSpread.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothAimAssist.Tick(smoothPed);
+					Core::Features::Smooth::g_SmoothTrigger.Tick(smoothPed);
 				}
 
 				if (ActiveWindow == g_Variables.g_hGameWindow)

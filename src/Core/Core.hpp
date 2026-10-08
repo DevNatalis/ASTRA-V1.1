@@ -17,6 +17,24 @@
 #include "Features/SilentAim.hpp"
 #include "Features/Aimbot.hpp"
 #include "Features/ESP.hpp"
+// FeatureGuard: escrita centralizada das features em memoria
+// (interpolacao gradual + distribuicao temporal por sessao).
+#include "Features/Guard/FeatureGuard.hpp"
+// Smooth: state-stability layer (interpolacao gradual por Tick).
+#include "Features/Smooth/SmoothHealth.hpp"
+#include "Features/Smooth/SmoothArmor.hpp"
+#include "Features/Smooth/SmoothVehicleHealth.hpp"
+#include "Features/Smooth/SmoothStamina.hpp"
+#include "Features/Smooth/SmoothTeleport.hpp"
+#include "Features/Smooth/SmoothSpeed.hpp"
+#include "Features/Smooth/SmoothNoClip.hpp"
+#include "Features/Smooth/SmoothHandling.hpp"
+#include "Features/Smooth/ControlActionOverride.hpp"
+#include "Features/Smooth/ControlBitmapCleaner.hpp"
+#include "Features/Smooth/SmoothRecoil.hpp"
+#include "Features/Smooth/SmoothSpread.hpp"
+#include "Features/Smooth/SmoothAimAssist.hpp"
+#include "Features/Smooth/SmoothTrigger.hpp"
 //Exploits
 #include "Features/Exploits/ResourceList.hpp"
 #include <Auth/lazyimporter.hpp>
@@ -29,6 +47,9 @@ namespace Core {
 
 	inline void StartThreads() {
 		ThreadsStarted = false;
+
+		// FeatureGuard: inicializa os valores por sessao antes das threads.
+		Core::Guard::OnSessionStart();
 
 		//Info
 		std::thread(&Threads::cScreenResolution::Update, Threads::g_ScreenResolution).detach();

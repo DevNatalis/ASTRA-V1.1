@@ -1,0 +1,149 @@
+name: build-release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*.*.*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DXSDK_URL: https://www.nuget.org/api/v2/package/Microsoft.DXSDK.D3DX/9.29.952.8
+  # SHA-256 of the .nupkg above (supply-chain pin; update together with the URL).
+  DXSDK_SHA256: ead0906ae8a26c18a7525da7490127a2110f7c58f18293738283e30e97c6ea4b
+
+jobs:
+  build:
+    runs-on: windows-2022
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore DXSDK.D3DX NuGet package
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path packages | Out-Null
+          $pkg = 'packages/Microsoft.DXSDK.D3DX.9.29.952.8'
+          if (-not (Test-Path "$pkg/build/native/Microsoft.DXSDK.D3DX.targets")) {
+            Invoke-WebRequest -Uri $env:DXSDK_URL -OutFile packages/dxsdk.nupkg
+            $got = (Get-FileHash packages/dxsdk.nupkg -Algorithm SHA256).Hash.ToLower()
+            if ($got -ne $env:DXSDK_SHA256.ToLower()) {
+              throw "DXSDK package hash mismatch: $got"
+            }
+            Copy-Item packages/dxsdk.nupkg packages/dxsdk.zip -Force
+            Expand-Archive -Path packages/dxsdk.zip -DestinationPath $pkg -Force
+            Copy-Item packages/dxsdk.nupkg "$pkg/Microsoft.DXSDK.D3DX.9.29.952.8.nupkg" -Force
+            Remove-Item packages/dxsdk.zip -Force
+          }
+
+      - name: Setup VS environment (cl for regression tests)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build ASTRA (Release x64)
+        run: msbuild src/src.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+
+      - name: Build Updater (Release x64)
+        run: msbuild src/Updater/Updater.vcxproj /p:Configuration=Release /p:Platform=x64 /v:minimal
+
+      - name: Run regression tests
+        shell: cmd
+        run: |
+          src\tests\run_auth_regression.cmd
+          src\tests\run_login_ui_regression.cmd
+          src\tests\run_update_regression.cmd
+
+      - name: Upload artifacts (branch builds)
+        if: startsWith(github.ref, 'refs/tags/v') != true
+        uses: actions/upload-artifact@v4
+        with:
+          name: astra-dev-build
+          path: |
+            src/x64/Release/ASTRA.exe
+            src/x64/Release/Updater.exe
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: windows-2022
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore DXSDK.D3DX NuGet package
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path packages | Out-Null
+          $pkg = 'packages/Microsoft.DXSDK.D3DX.9.29.952.8'
+          if (-not (Test-Path "$pkg/build/native/Microsoft.DXSDK.D3DX.targets")) {
+            Invoke-WebRequest -Uri $env:DXSDK_URL -OutFile packages/dxsdk.nupkg
+            $got = (Get-FileHash packages/dxsdk.nupkg -Algorithm SHA256).Hash.ToLower()
+            if ($got -ne $env:DXSDK_SHA256.ToLower()) {
+              throw "DXSDK package hash mismatch: $got"
+            }
+            Copy-Item packages/dxsdk.nupkg packages/dxsdk.zip -Force
+            Expand-Archive -Path packages/dxsdk.zip -DestinationPath $pkg -Force
+            Copy-Item packages/dxsdk.nupkg "$pkg/Microsoft.DXSDK.D3DX.9.29.952.8.nupkg" -Force
+            Remove-Item packages/dxsdk.zip -Force
+          }
+
+      - name: Verify tag matches compiled version
+        shell: powershell
+        run: |
+          $tag = '${{ github.ref_name }}'  # e.g. v1.1.0
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') { throw "Tag '$tag' is not vX.Y.Z." }
+          $ver = $Matches[1]
+          $cfg = Get-Content src/Core/Update/UpdateConfig.hpp -Raw
+          if ($cfg -notmatch [regex]::Escape('"' + $ver + '"')) {
+            throw "Tag $tag does not match UpdateConfig kAppVersion. Bump the version first."
+          }
+          echo "RELEASE_VERSION=$ver" >> $env:GITHUB_ENV
+
+      - name: Build ASTRA (Release x64)
+        run: msbuild src/src.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+
+      - name: Build Updater (Release x64)
+        run: msbuild src/Updater/Updater.vcxproj /p:Configuration=Release /p:Platform=x64 /v:minimal
+
+      - name: Sign manifest
+        shell: powershell
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if (-not $env:UPDATE_SIGNING_KEY) { throw 'UPDATE_SIGNING_KEY secret is not configured.' }
+          if (-not (Get-Command openssl -ErrorAction SilentlyContinue)) {
+            throw 'openssl is not on PATH (expected from Git for Windows on this runner).'
+          }
+          $keyPath = Join-Path $env:RUNNER_TEMP 'update_priv.pem'
+          try {
+            $env:UPDATE_SIGNING_KEY | Out-File -FilePath $keyPath -Encoding ascii -NoNewline
+            $repo = '${{ github.repository }}'
+            $url = "https://github.com/$repo/releases/download/v$env:RELEASE_VERSION/ASTRA.exe"
+            powershell -ExecutionPolicy Bypass -File scripts/sign_manifest.ps1 `
+              -ExePath src/x64/Release/ASTRA.exe -Version $env:RELEASE_VERSION `
+              -Url $url -KeyPath $keyPath -Out manifest.json `
+              -Status 'Disponivel' -Notes "Release v$env:RELEASE_VERSION"
+          } finally {
+            if (Test-Path $keyPath) { Remove-Item $keyPath -Force }
+          }
+          Get-Content manifest.json
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src/x64/Release/ASTRA.exe
+            src/x64/Release/Updater.exe
+            manifest.json
+          body: |
+            ASTRA v${{ env.RELEASE_VERSION }}
+            manifest.json carries the signed update metadata (version, URL, SHA-256, signature).

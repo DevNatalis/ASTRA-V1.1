@@ -1,4 +1,5 @@
 #include "SilentAim.hpp"
+#include <Auth/auth_manager.hpp>
 
 bool Core::Features::cSilentAim::SilentAimInitialized;
 std::uintptr_t Core::Features::cSilentAim::StartAddy;
@@ -27,7 +28,7 @@ void Core::Features::cSilentAim::HookSilent( )
 {
 	while ( true )
 	{
-		if ( g_Config.SilentAim->Enabled && g_Config.SilentAim->KeyBind != 0 && GetAsyncKeyState( g_Config.SilentAim->KeyBind ) & 0x8000 && GetForegroundWindow( ) != g_Variables.g_hCheatWindow )
+		if ( g_Auth.IsSessionValid() && g_Config.SilentAim->Enabled && g_Config.SilentAim->KeyBind != 0 && GetAsyncKeyState( g_Config.SilentAim->KeyBind ) & 0x8000 && GetForegroundWindow( ) != g_Variables.g_hCheatWindow )
 		{
 			CPed * Ped = Core::SDK::Game::GetClosestPed( g_Config.SilentAim->MaxDistance, g_Config.SilentAim->IgnoreNPCs, g_Config.SilentAim->OnlyVisible );
 			if ( !Ped ) { continue; }

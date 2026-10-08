@@ -84,8 +84,18 @@ namespace Core {
             }
 
             void Update() {
+                // RESPONSIVENESS: a full scan costs ~10 RPM round-trips per
+                // ped (up to 512 peds). Running it every 1ms saturates IPC
+                // and steals CPU from the render thread. Gate full scans to
+                // ~30Hz; visuals/aim already interpolate from the snapshot.
+                uint64_t lastScan = 0;
                 while (true) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    const uint64_t nowMs = GetTickCount64();
+                    if (nowMs - lastScan < 33) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                        continue;
+                    }
+                    lastScan = nowMs;
 
                     // Gate de sessao (VULN 1): sem recibo valido do servidor,
                     // nenhum dado de entidade e coletado — flipar IsLogged
@@ -113,7 +123,7 @@ namespace Core {
                     // STABILITY: MaxPed vem da memoria do jogo — sem clamp, um valor
                     // corrompido (ex: 200000) vira loop gigante + reserve enorme.
                     // Causa concreta: reserve(maxPed) sem limite + Ped(i) sem validar.
-                    const int safeMax = Guard::ClampCount(maxPed, 512);
+                    const int safeMax = ::Guard::ClampCount(maxPed, 512);
                     if (safeMax <= 0)
                         continue;
                     std::vector<Core::SDK::Game::EntityStruct> freshEntities;
@@ -122,7 +132,7 @@ namespace Core {
                     const D3DXVECTOR3 localPos = localPlayer->GetPos();
                     for (int i = 0; i < safeMax; ++i) {
                         CPed* currentPed = pedList->Ped(i);
-                        if (!Guard::IsRemotePtr((uintptr_t)currentPed))
+                        if (!::Guard::IsRemotePtr((uintptr_t)currentPed))
                             continue;
 
                         Core::SDK::Game::EntityStruct entity{};

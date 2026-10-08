@@ -223,6 +223,11 @@ namespace Gui
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 			g_pSwapChain->Present(g_Config.General->VSync, 0U); //VSync
+			// RESPONSIVENESS: with VSync off Present returns immediately and
+			// this loop would spin at thousands of fps, burning a core for no
+			// visual gain. Yield 1ms; input-latency cost is negligible.
+			if (!g_Config.General->VSync)
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
 
