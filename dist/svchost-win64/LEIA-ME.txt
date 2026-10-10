@@ -1,0 +1,6 @@
+﻿svchost — como usar
+====================
+1. Instale o VC++ Redistributable 2022 x64 (necessario).
+2. Extraia tudo para UMA pasta (ex: Documentos\svchost).
+3. Execute svchost.exe como ADMINISTRADOR, com o FiveM instalado.
+4. Faca login com sua conta. Nao renomeie nem separe os arquivos.
