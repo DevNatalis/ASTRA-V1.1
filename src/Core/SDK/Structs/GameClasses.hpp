@@ -240,12 +240,12 @@ public:
 
 	float GetHealth() {
 		if (!this) { return 0; }
-		return Mem.Read<float>(reinterpret_cast<uintptr_t>(this) + 0x280);
+		return Mem.Read<float>(reinterpret_cast<uintptr_t>(this) + (g_Offsets.m_MaxHealth ? g_Offsets.m_MaxHealth - 4u : 0x280u));
 	}
 
 	void SetHealth(float Health) {
 		if (!this) { return; }
-		Mem.Write<float>(reinterpret_cast<uintptr_t>(this) + 0x280, Health);
+		Mem.Write<float>(reinterpret_cast<uintptr_t>(this) + (g_Offsets.m_MaxHealth ? g_Offsets.m_MaxHealth - 4u : 0x280u), Health);
 	}
 
 	float GetArmor() {
@@ -411,6 +411,7 @@ public:
 	void explomeele(bool Toggle)
 	{
 		CPlayerInfo* PlayerInfo = this->GetPlayerInfo();
+		if (!g_Offsets.m_FrameFlag) return; // offset ainda nao resolvido: sem escrita
 		Mem.Write<float>(reinterpret_cast<uintptr_t>(PlayerInfo) + g_Offsets.m_FrameFlag, 1 << 13);
 	}
 
@@ -505,6 +506,7 @@ public:
 
 	void SetSuperJump(bool toggle) {
 		if (!this) { return; }
+		if (!g_Offsets.m_FrameFlag) { return; } // offset ainda nao resolvido: sem escrita
 		Mem.Write<uint32_t>(reinterpret_cast<uintptr_t>(this) + g_Offsets.m_FrameFlag, 
 			toggle ? (Mem.Read<uint32_t>(reinterpret_cast<uintptr_t>(this) + g_Offsets.m_FrameFlag) | (1 << 14))
 			       : (Mem.Read<uint32_t>(reinterpret_cast<uintptr_t>(this) + g_Offsets.m_FrameFlag) & ~(1 << 14)));
@@ -644,6 +646,7 @@ public:
 		if (!this) { return; }
 		CPlayerInfo* PlayerInfo = (CPlayerInfo*)GetPlayerInfo();
 		if (!PlayerInfo) { return; }
+		if (!g_Offsets.m_FrameFlag) { return; } // offset ainda nao resolvido: sem escrita
 		uintptr_t Addr = reinterpret_cast<uintptr_t>(PlayerInfo) + g_Offsets.m_FrameFlag;
 		DWORD flag = Mem.Read<DWORD>(Addr);
 		Mem.Write<DWORD>(Addr, Toggle == true ? flag |= (1 << 14) : flag &= ~(1 << 14));

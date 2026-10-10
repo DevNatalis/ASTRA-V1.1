@@ -16,6 +16,7 @@
 #include "Features/GodMode.hpp"
 #include "Features/WeaponWheel.hpp"
 #include "Features/Revive.hpp"
+#include "Features/StickyToggles.hpp"
 #include "Features/Triggerbot.hpp"
 #include "Features/SilentAim.hpp"
 #include "Features/Aimbot.hpp"

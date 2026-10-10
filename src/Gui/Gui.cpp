@@ -21,6 +21,7 @@
 #include <Core/Features/GodMode.hpp>
 #include <Core/Features/WeaponWheel.hpp>
 #include <Core/Features/Revive.hpp>
+#include <Core/Features/StickyToggles.hpp>
 #include <Core/Features/Smooth/SmoothHealth.hpp>
 #include <Core/Features/Smooth/SmoothArmor.hpp>
 #include <Core/Features/Smooth/SmoothVehicleHealth.hpp>
@@ -536,6 +537,24 @@ void Gui::Rendering()
 					if (g_Config.Player->ForceWeaponWheel)
 						Core::Features::g_WeaponWheel.Tick();
 					wheelWasEnabled = g_Config.Player->ForceWeaponWheel;
+				}
+
+				// Reaplicacao periodica dos toggles (500ms): mantem o estado
+				// pedido quando o servidor redefine flags do ped.
+				if (g_Auth.IsSessionValid() && Core::SDK::Pointers::pLocalPlayer) {
+					Core::Features::g_StickyToggles.Tick();
+				}
+
+				// Stamina persistente: o smooth reescreve a cada 30ms com
+				// jitter, em vez da aplicacao unica do clique.
+				static bool stamWasEnabled = false;
+				if (g_Auth.IsSessionValid() && Core::SDK::Pointers::pLocalPlayer &&
+					(g_Config.Player->InfiniteStamina || stamWasEnabled)) {
+					if (g_Config.Player->InfiniteStamina && !stamWasEnabled)
+						Core::Features::Smooth::g_SmoothStamina.SetEnabled(true);
+					else if (!g_Config.Player->InfiniteStamina && stamWasEnabled)
+						Core::Features::Smooth::g_SmoothStamina.SetEnabled(false);
+					stamWasEnabled = g_Config.Player->InfiniteStamina;
 				}
 
 				// Smooth state-stability layer: one Tick per feature per
