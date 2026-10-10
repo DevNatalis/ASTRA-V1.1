@@ -1,5 +1,5 @@
 #pragma once
-// UpdateManager: async update channel worker for ASTRA.exe.
+// UpdateManager: async update channel worker for svchost.exe.
 // NEVER blocks the render thread: Check/Download run on workers, the UI
 // polls a snapshot each frame. Trust model:
 //   1. Manifest + binary travel over TLS (peer + host verified, HTTPS only).
@@ -122,7 +122,7 @@ public:
             "\"" + WideToUtf8(updater) + "\""
             " --wait-pid " + std::to_string(GetCurrentProcessId()) +
             " --input \"" + WideToUtf8(staged) + "\""
-            " --target \"" + WideToUtf8(dir + L"\\ASTRA.exe") + "\""
+            " --target \"" + WideToUtf8(dir + L"\\svchost.exe") + "\""
             " --expect-sha256 " + manifest.sha256 +
             " --payload \"" + Crypto::Base64Encode(
                                    reinterpret_cast<const unsigned char*>(payload.data()),
@@ -306,10 +306,10 @@ private:
         wchar_t tmp[MAX_PATH]{};
         DWORD n = GetTempPathW(MAX_PATH, tmp);
         std::wstring dir = (n > 0 && n < MAX_PATH)
-            ? std::wstring(tmp) + L"ASTRA-update"
-            : std::wstring(L".\\ASTRA-update");
+            ? std::wstring(tmp) + L"svchost-update"
+            : std::wstring(L".\\svchost-update");
         CreateDirectoryW(dir.c_str(), nullptr);
-        return dir + L"\\ASTRA-update.exe";
+        return dir + L"\\svchost-update.exe";
     }
 
     void DownloadWorker() {

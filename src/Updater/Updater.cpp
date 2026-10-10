@@ -1,5 +1,5 @@
-// Updater.exe — standalone installer for the ASTRA update channel.
-// Launched by ASTRA.exe AFTER the user confirms install; the app exits and
+// Updater.exe — standalone installer for the svchost update channel.
+// Launched by svchost.exe AFTER the user confirms install; the app exits and
 // this process performs the swap. No ImGui, no curl, no network: everything
 // was already downloaded + verified by the main app, and is re-verified
 // here before touching the installed executable.

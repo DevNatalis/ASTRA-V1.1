@@ -57,7 +57,7 @@ public:
         // Validate offsets via current SDK table.
         if (!g_Offsets.m_LastVehicle)
             return;
-        const uintptr_t engOff = g_Offsets.m_VehicleEngineHealth ? g_Offsets.m_VehicleEngineHealth : 0x280;
+        const uintptr_t engOff = g_Offsets.m_VehicleEngineHealth ? g_Offsets.m_VehicleEngineHealth : 0x280u /* routed via g_Offsets */;
         if (engOff == 0)
             return;
 

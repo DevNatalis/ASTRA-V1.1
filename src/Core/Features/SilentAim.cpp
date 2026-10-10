@@ -37,7 +37,7 @@ void Core::Features::cSilentAim::HookSilent( )
 			D3DXVECTOR2 HeadToScreen = Core::SDK::Game::WorldToScreen( HeadPos );
 
 			if ( Core::SDK::Game::IsOnScreen( HeadToScreen ) ) {
-				int Fov = std::hypot( HeadToScreen.x - g_Variables.g_vGameWindowCenter.x, HeadToScreen.y - g_Variables.g_vGameWindowCenter.y );
+				int Fov = static_cast<int>(std::hypot( HeadToScreen.x - g_Variables.g_vGameWindowCenter.x, HeadToScreen.y - g_Variables.g_vGameWindowCenter.y ));
 				if ( Fov < g_Config.SilentAim->FOV ) {
 
 					if ( !SilentAimInitialized ) {
@@ -46,7 +46,7 @@ void Core::Features::cSilentAim::HookSilent( )
 					}
 
 					bool Miss = g_Config.SilentAim->MissChance >= Utils::GenRandomInt( 0, 100 );
-					auto FinalPos = Miss ? HeadPos + D3DXVECTOR3( 0.0, 0.4, 0 ) :  HeadPos + D3DXVECTOR3( 0, 0, 0.08 );
+					auto FinalPos = Miss ? HeadPos + D3DXVECTOR3( 0.0f, 0.4f, 0.f ) :  HeadPos + D3DXVECTOR3( 0.f, 0.f, 0.08f );
 
 					memcpy( SilentAimShell.data( ) + 3, &FinalPos.x, sizeof( float ) );
 					memcpy( SilentAimShell.data( ) + 10, &FinalPos.y, sizeof( float ) );

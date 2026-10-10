@@ -1,4 +1,4 @@
-#define ASTRA_AUTH_TESTS
+#define SVCHOST_AUTH_TESTS
 #include <Auth/auth_manager.hpp>
 #include <iostream>
 #include <stdexcept>

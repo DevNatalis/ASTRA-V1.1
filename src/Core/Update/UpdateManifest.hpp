@@ -1,11 +1,11 @@
 #pragma once
 // UpdateManifest: pure manifest logic (no network, no threads).
-// Shared by ASTRA.exe, Updater.exe and the regression test.
+// Shared by svchost.exe, Updater.exe and the regression test.
 //
 // Manifest schema (docs/UPDATES.md):
 //   {
 //     "version": "1.1.0",            // required, strict semver triple
-//     "url": "https://.../ASTRA-1.1.0.exe",
+//     "url": "https://.../svchost-1.1.0.exe",
 //     "sha256": "<64 hex chars>",
 //     "signature": "<base64 RSA-PKCS1v15-SHA256 over payload below>",
 //     "mandatory": false,            // optional, default false

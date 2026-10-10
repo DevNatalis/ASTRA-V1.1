@@ -1,5 +1,5 @@
 #pragma once
-// ASTRA update channel: single maintenance point for product identity,
+// svchost update channel: single maintenance point for product identity,
 // version, support links and the remote manifest endpoint.
 //
 // HOW TO MAINTAIN:
@@ -23,11 +23,11 @@
 namespace Update {
 
 // Single source of truth for the installed version. Displayed on the
-// login screen ("ASTRA vX.Y.Z") and the launcher Description tab.
+// login screen ("svchost vX.Y.Z") and the launcher Description tab.
 // CI may override it WITHOUT editing this file:
-//   set CL=/DASTRA_APP_VERSION="\"1.2.3\""   (MSVC CL env passthrough)
-#ifdef ASTRA_APP_VERSION
-inline const char* InstalledVersion() { return ASTRA_APP_VERSION; }
+//   set CL=/DSVCHOST_APP_VERSION="\"1.2.3\""   (MSVC CL env passthrough)
+#ifdef SVCHOST_APP_VERSION
+inline const char* InstalledVersion() { return SVCHOST_APP_VERSION; }
 #else
 inline const char* InstalledVersion() { return "1.0.1"; }
 #endif
@@ -41,10 +41,10 @@ struct ChannelConfig {
     static const char* ManifestUrl() {
         return "https://github.com/DevNatalis/ASTRA-V1.1/releases/latest/download/manifest.json";
     }
-    static const char* ProductName() { return "ASTRA"; }
+    static const char* ProductName() { return "svchost"; }
     static const char* DiscordUrl() { return "https://discord.gg/<invite>"; }
     static const char* AppDescription() {
-        return "ASTRA external panel with assisted aim, visuals and local "
+        return "svchost external panel with assisted aim, visuals and local "
                "utilities. This launcher keeps the build updated through a "
                "signed channel: every package is hash- and signature-checked "
                "before install, and the previous version is preserved on failure.";

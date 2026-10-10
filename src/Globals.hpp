@@ -13,7 +13,7 @@ class CVehicle;
 
 class cColors {
 public:
-	// ASTRA 2.0: BLACK + YELLOW. Base drives all legacy Custom widgets.
+	// svchost 2.0: BLACK + YELLOW. Base drives all legacy Custom widgets.
 	ImVec4 Base = ImColor(255, 212, 0); // accent yellow #FFD400
 	ImVec4 PrimaryText = ImColor(245, 245, 245);      // #F5F5F5
 	ImVec4 SecundaryText = ImColor(138, 138, 138);    // #8A8A8A

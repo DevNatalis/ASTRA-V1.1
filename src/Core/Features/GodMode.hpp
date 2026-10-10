@@ -1,6 +1,6 @@
 #pragma once
-// GodMode anti-detect: restaura vida por limiar em vez de flag permanente.
-// Adaptado de GodMode_AntiDetect.cpp (standalone) para a arquitetura ASTRA
+// GodMode por limiar: restaura vida por faixa em vez de flag permanente.
+// Adaptado de GodMode_Threshold.cpp (standalone) para a arquitetura svchost
 // (usa Core::Mem + pLocalPlayer ja resolvido + throttle no render loop).
 //
 // Estrategia:

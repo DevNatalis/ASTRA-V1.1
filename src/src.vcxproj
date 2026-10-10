@@ -24,7 +24,8 @@
     <ProjectGuid>{30ddb2ea-876d-48c0-8cc5-8c6db8334bd2}</ProjectGuid>
     <RootNamespace>Wexize Revamp</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>ASTRA</ProjectName>
+    <ProjectName>svchost</ProjectName>
+    <TargetName>svchost</TargetName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -218,10 +219,9 @@
     <ClInclude Include="Security\Api\curl\system.h" />
     <ClInclude Include="Security\Api\curl\typecheck-gcc.h" />
     <ClInclude Include="Security\Api\curl\urlapi.h" />
-    <ClInclude Include="Gui\Custom\Custom.hpp" />
     <ClInclude Include="Gui\Gui.hpp" />
     <ClInclude Include="Gui\Overlay\Overlay.hpp" />
-    <ClInclude Include="Gui\pages\Combat.hpp" />
+    <ClInclude Include="Gui\Pages\Combat.hpp" />
     <ClInclude Include="Gui\Pages\Exploits.hpp" />
     <ClInclude Include="Gui\Pages\Local.hpp" />
     <ClInclude Include="Auth\auth_manager.hpp" />
@@ -232,7 +232,7 @@
     <ClInclude Include="Gui\Pages\VisualsVehicles.hpp" />
     <ClInclude Include="Gui\Pages\Weapons.hpp" />
     <ClInclude Include="Gui\Pages\World.hpp" />
-    <ClInclude Include="Gui\Theme.hpp" />
+    <ClInclude Include="Core\Features\Revive.hpp" />
     <ClInclude Include="Includes\CustomWidgets\Custom.hpp" />
     <ClInclude Include="Includes\CustomWidgets\EspPreview.hpp" />
     <ClInclude Include="Includes\CustomWidgets\Notify.hpp" />

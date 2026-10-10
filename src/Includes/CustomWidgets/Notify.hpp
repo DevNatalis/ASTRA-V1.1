@@ -187,7 +187,7 @@ namespace NotifyManager
     {
         std::lock_guard<std::mutex> guard(NotifyMutex);
         NotifyManager::NotifyClass Notify(NotifyManager::eType::Info, ExpireTime);
-        Notify.SetTitle(xorstr("ASTRA"));
+        Notify.SetTitle(xorstr("svchost"));
         Notify.SetDescription(Description);
         NotifyList.push_back(Notify);
     }

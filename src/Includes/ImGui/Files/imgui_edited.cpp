@@ -1449,7 +1449,7 @@ namespace edited
 
     void ImRotateEnd(float rad, ImVec2 center = ImRotationCenter())
     {
-        float s = sin(rad), c = cos(rad);
+        float s = sinf(rad), c = cosf(rad);
         center = ImRotate(center, s, c) - center;
 
         auto& buf = ImGui::GetWindowDrawList()->VtxBuffer;

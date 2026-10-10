@@ -40,8 +40,8 @@ namespace Core
 					lastPos = pos;
 					lastSize = size;
 
-					MoveWindow(g_Variables.g_hCheatWindow, g_Variables.g_vGameWindowPos.x, g_Variables.g_vGameWindowPos.y,
-						g_Variables.g_vGameWindowSize.x, g_Variables.g_vGameWindowSize.y - 1, true);
+					MoveWindow(g_Variables.g_hCheatWindow, static_cast<int>(g_Variables.g_vGameWindowPos.x), static_cast<int>(g_Variables.g_vGameWindowPos.y),
+						static_cast<int>(g_Variables.g_vGameWindowSize.x), static_cast<int>(g_Variables.g_vGameWindowSize.y) - 1, true);
 				}
 			}
 

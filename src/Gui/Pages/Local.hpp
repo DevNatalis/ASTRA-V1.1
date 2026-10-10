@@ -1,8 +1,8 @@
 #pragma once
-#include <Includes/includes.hpp>
 #include <windows.h>
 #include <iostream>
 #include <thread>
+#include <Includes/includes.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
 
 #include <Core/Core.hpp>
@@ -30,7 +30,7 @@ namespace Local {
 				// MAIN SECTION
 				ImGui::CustomBeginChild(xorstr("Geral"), xorstr("Configure Para Melhor Uso!"), ImVec2(228, 390), false, 0);
 				{
-					if (Custom::CheckBoxCfg(xorstr("GodMode"), &g_Config.Player->EnableGodMode, [&]() { static int KeyMode = 1; ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->GodModeKey, &KeyMode); }, true, xorstr("Modo furtivo: so cura quando a vida cai (menos detectavel)"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBoxCfg(xorstr("GodMode"), &g_Config.Player->EnableGodMode, [&]() { static int KeyMode = 1; ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->GodModeKey, &KeyMode); }))
 					{
 						Core::Features::g_GodMode.SetEnabled(g_Config.Player->EnableGodMode);
 						const bool applied = Core::SDK::Pointers::pLocalPlayer != nullptr;
@@ -44,7 +44,7 @@ namespace Local {
 							static int KeyMode = 1;
 							ImGui::Keybind(xorstr("Atalho"), &g_Config.Player->NoClipKey, &KeyMode);
 							ImGui::SliderFloat(xorstr("Velocidade"), &g_Config.Player->NoClipSpeed, 0.1f, 20.f, xorstr("%1.2fm/s"));
-						}, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+						}))
 					{
 						Core::SDK::Pointers::pLocalPlayer->FreezePed(g_Config.Player->NoClipEnabled);
 						Core::SDK::Pointers::pLocalPlayer->bSetInvisibleLocal(g_Config.Player->NoClipEnabled);
@@ -65,19 +65,19 @@ namespace Local {
 						NotifyManager::Send(std::string("Correr Rapido ") + (g_Config.Player->FastRun ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Anti Headshot"), &g_Config.Player->AntiHSEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Anti Headshot"), &g_Config.Player->AntiHSEnabled))
 					{
 						Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::NoCriticalHits, g_Config.Player->AntiHSEnabled);
 						NotifyManager::Send(std::string("Anti Headshot ") + (g_Config.Player->AntiHSEnabled ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Encolher"), &g_Config.Player->ShrinkEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Encolher"), &g_Config.Player->ShrinkEnabled))
 					{
 						Core::SDK::Pointers::pLocalPlayer->SetConfigFlag(ePedConfigFlag::Shrink, g_Config.Player->ShrinkEnabled);
 						NotifyManager::Send(std::string("Encolher ") + (g_Config.Player->ShrinkEnabled ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Sem Colisao"), &g_Config.Player->NoColisionEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Sem Colisao"), &g_Config.Player->NoColisionEnabled))
 					{
 						static std::chrono::steady_clock::time_point StartChrono = std::chrono::steady_clock::now();
 						std::chrono::steady_clock::time_point EndChrono = std::chrono::steady_clock::now();
@@ -96,7 +96,7 @@ namespace Local {
 						NotifyManager::Send(std::string("Sem Colisao ") + (g_Config.Player->NoColisionEnabled ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Soco Explosivo"), &g_Config.Player->ExploPunchEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Soco Explosivo"), &g_Config.Player->ExploPunchEnabled))
 					{
 						Core::SDK::Pointers::pLocalPlayer->explomeele(g_Config.Player->ExploPunchEnabled);
 						NotifyManager::Send(std::string("Soco Explosivo ") + (g_Config.Player->ExploPunchEnabled ? "ativado" : "desativado"), 2000);
@@ -135,13 +135,13 @@ namespace Local {
 						NotifyManager::Send(std::string("CombatRoll Infinito ") + (g_Config.Player->InfiniteCombatRoll ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Stamina Infinita"), &g_Config.Player->InfiniteStamina, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Stamina Infinita"), &g_Config.Player->InfiniteStamina))
 					{
 						Core::SDK::Pointers::pLocalPlayer->SetInfStamina(g_Config.Player->InfiniteStamina);
 						NotifyManager::Send(std::string("Stamina Infinita ") + (g_Config.Player->InfiniteStamina ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Modo Coronha"), &g_Config.Player->CrouchMode, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Modo Coronha"), &g_Config.Player->CrouchMode))
 					{
 						NotifyManager::Send(std::string("Modo Coronha ") + (g_Config.Player->CrouchMode ? "ativado" : "desativado"), 2000);
 					}
@@ -167,14 +167,14 @@ namespace Local {
 				// MISC SECTION
 				ImGui::CustomBeginChild(xorstr("Diversos"), xorstr("Ajustes Diversos!"), ImVec2(228, 390), false, 0);
 				{
-					if (Custom::CheckBox(xorstr("Super Jump"), &g_Config.Player->SuperJumpEnabled, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Super Jump"), &g_Config.Player->SuperJumpEnabled))
 					{
 						if (Core::SDK::Pointers::pLocalPlayer)
 							Core::SDK::Pointers::pLocalPlayer->SuperJump(g_Config.Player->SuperJumpEnabled);
 						NotifyManager::Send(std::string("Super Jump ") + (g_Config.Player->SuperJumpEnabled ? "ativado" : "desativado"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Invisibilidade"), &g_Config.Player->Invisibilidade, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Invisibilidade"), &g_Config.Player->Invisibilidade))
 					{
 						if (Core::SDK::Pointers::pLocalPlayer) {
 							if (g_Config.Player->Invisibilidade) {
@@ -187,14 +187,14 @@ namespace Local {
 						NotifyManager::Send(std::string("Invisibilidade ") + (g_Config.Player->Invisibilidade ? "ativada" : "desativada"), 2000);
 					}
 
-					if (Custom::CheckBox(xorstr("Ativar FreeCam"), &g_Config.Player->FreeCamActivate, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION))
+					if (Custom::CheckBox(xorstr("Ativar FreeCam"), &g_Config.Player->FreeCamActivate))
 					{
 						NotifyManager::Send(std::string("FreeCam ") + (g_Config.Player->FreeCamActivate ? "ativado" : "desativado"), 2000);
 					}
 
-					Custom::CheckBox(xorstr("FC Fov Customizado"), &g_Config.Player->FreeCamCustomFov, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION);
+					Custom::CheckBox(xorstr("FC Fov Customizado"), &g_Config.Player->FreeCamCustomFov);
 
-					Custom::CheckBox(xorstr("FC Invisivel"), &Core::g_Config.Player->invisible_while_activate, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION);
+					Custom::CheckBox(xorstr("FC Invisivel"), &Core::g_Config.Player->invisible_while_activate);
 
 					ImGui::SliderFloat(xorstr("FC Quantidade Fov"), &g_Config.Player->FreeCamFovAmount, 1.f, 50.f, xorstr("%.1f m/s"));
 

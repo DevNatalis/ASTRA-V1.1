@@ -14,6 +14,10 @@ namespace Core::Features {
 class Revive {
     using Clock = std::chrono::steady_clock;
 public:
+    // Health lives 4 bytes below MaxHealth on current builds.
+    static uintptr_t HealthOff() {
+        return g_Offsets.m_MaxHealth ? (g_Offsets.m_MaxHealth - 4u) : 0x280u;
+    }
     bool Enabled() const { return enabled_; }
     void SetEnabled(bool on) {
         enabled_ = on;
@@ -44,7 +48,8 @@ public:
         }
 
         float health = 0, maximum = 0;
-        if (!Read(ped + 0x280, health) ||
+        const uintptr_t hOff = HealthOff();
+        if (!Read(ped + hOff, health) ||
             !Read(ped + g_Offsets.m_MaxHealth, maximum) ||
             !std::isfinite(health) || !std::isfinite(maximum) ||
             maximum <= 0.f || maximum > 100000.f) {
@@ -70,13 +75,13 @@ public:
         const float delta = maximum * .15f * (1.f + jitter_(random_));
         const float target = (std::min)(maximum, health + delta);
         if (!std::isfinite(target) || target <= health) return;
-        if (!Write(ped + 0x280, target)) return;
+        if (!Write(ped + hOff, target)) return;
         char message[128];
         sprintf_s(message, "[GHOST] revive: health %.1f -> %.1f\n", health, target);
         OutputDebugStringA(message);
 
         float observed = 0;
-        if (target >= maximum && Read(ped + 0x280, observed) &&
+        if (target >= maximum && Read(ped + hOff, observed) &&
             std::isfinite(observed) && observed >= maximum) Complete(now);
     }
 

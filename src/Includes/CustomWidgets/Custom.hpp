@@ -130,7 +130,7 @@ namespace Custom {
 	}
 
 	inline void DrawBackground(bool Logged) {
-		// ASTRA 2.0: dark glass. Alpha lives ONLY on surfaces, never on text.
+		// svchost 2.0: dark glass. Alpha lives ONLY on surfaces, never on text.
 		const ImVec2 pos = ImGui::GetWindowPos();
 
 		const float round = 10.0f;
@@ -203,7 +203,7 @@ namespace Custom {
 		it_anim->second.text_offset = ImClamp(it_anim->second.text_offset + (6.f * g.IO.DeltaTime * (selectable ? 10.f : -10.f)), 0.f, 24.f);
 		it_anim->second.arrow_opticaly = ImLerp(it_anim->second.arrow_opticaly, selectable ? 1.f : 0.f, g.IO.DeltaTime * 7.5f);
 
-		GetWindowDrawList()->AddCircleFilled(ImVec2(bb.Min.x + 8.f, bb.Min.y + 10.f), 3.f, GetColorU32(accent_color, it_anim->second.arrow_opticaly), 100.f);
+		GetWindowDrawList()->AddCircleFilled(ImVec2(bb.Min.x + 8.f, bb.Min.y + 10.f), 3.f, GetColorU32(accent_color, it_anim->second.arrow_opticaly), 100);
 
 		ImVec2 icon_pos = ImVec2(bb.Min.x + it_anim->second.text_offset, bb.Max.y - icon_size.y - (size.y - icon_size.y) / 2);
 		GetWindowDrawList()->AddText(g_Variables.FontAwesomeSolid, g_Variables.FontAwesomeSolid->FontSize, icon_pos, GetColorU32(it_anim->second.text), icon);
@@ -314,9 +314,9 @@ namespace Custom {
 
 		float NormalizedTime = ImClamp(IO.DeltaTime * 10.f, 0.0f, 1.0f);
 		float NormalizedTime2 = ImClamp(IO.DeltaTime * 8.f, 0.0f, 1.0f);
-		SubTabAnim->second.BackgroundColor = ImLerp(SubTabAnim->second.BackgroundColor, active ? ImVec4(g_Col.Base.x, g_Col.Base.y, g_Col.Base.z, 30.f / 255.f) : ImVec4(g_Col.Base.x, g_Col.Base.y, g_Col.Base.z, 0.f), Custom::EaseInOutCirc(NormalizedTime));
-		SubTabAnim->second.TextColor = ImLerp(SubTabAnim->second.TextColor, active ? ImColor( /*g_Col.Base*/ 255, 255, 255) : ImColor(60, 60, 60), Custom::EaseInOutCirc(NormalizedTime));
-		SubTabAnim->second.BackgroundGrow = ImLerp(SubTabAnim->second.BackgroundGrow, active ? ImVec2(4, 4) : ImVec2(0, 0), Custom::EaseInOutCirc(NormalizedTime2));
+		SubTabAnim->second.BackgroundColor = ImLerp(SubTabAnim->second.BackgroundColor, active ? ImVec4(g_Col.Base.x, g_Col.Base.y, g_Col.Base.z, 30.f / 255.f) : ImVec4(g_Col.Base.x, g_Col.Base.y, g_Col.Base.z, 0.f), static_cast<float>(Custom::EaseInOutCirc(NormalizedTime)));
+		SubTabAnim->second.TextColor = ImLerp(SubTabAnim->second.TextColor, active ? ImColor( /*g_Col.Base*/ 255, 255, 255) : ImColor(60, 60, 60), static_cast<float>(Custom::EaseInOutCirc(NormalizedTime)));
+		SubTabAnim->second.BackgroundGrow = ImLerp(SubTabAnim->second.BackgroundGrow, active ? ImVec2(4.f, 4.f) : ImVec2(0.f, 0.f), static_cast<float>(Custom::EaseInOutCirc(NormalizedTime2)));
 		SubTabAnim->second.UnSelectedAnim = ImLerp(SubTabAnim->second.UnSelectedAnim, hovered && !active ? 2.f : 0.f, IO.DeltaTime * 4.f);
 
 		const float rounding = 12.f;
@@ -373,13 +373,13 @@ namespace Custom {
 
 		SubTabAnim.BackgroundColor = ImLerp(SubTabAnim.BackgroundColor,
 			active ? ImVec4(g_Col.Base.x, g_Col.Base.y, g_Col.Base.z, 30.f / 255.f) : ImVec4(g_Col.Base.x, g_Col.Base.y, g_Col.Base.z, 0.f),
-			Custom::EaseInOutCirc(NormalizedTime));
+			static_cast<float>(Custom::EaseInOutCirc(NormalizedTime)));
 
 		SubTabAnim.TextColor = ImLerp(SubTabAnim.TextColor,
 			active ? ImColor(255, 255, 255) : ImColor(60, 60, 60),
-			Custom::EaseInOutCirc(NormalizedTime));
+			static_cast<float>(Custom::EaseInOutCirc(NormalizedTime)));
 
-		SubTabAnim.BackgroundGrow = ImLerp(SubTabAnim.BackgroundGrow, active ? ImVec2(3, 3) : ImVec2(0, 0), Custom::EaseInOutCirc(NormalizedTime2));
+		SubTabAnim.BackgroundGrow = ImLerp(SubTabAnim.BackgroundGrow, active ? ImVec2(3.f, 3.f) : ImVec2(0.f, 0.f), static_cast<float>(Custom::EaseInOutCirc(NormalizedTime2)));
 		SubTabAnim.UnSelectedAnim = ImLerp(SubTabAnim.UnSelectedAnim, hovered && !active ? 2.f : 0.f, IO.DeltaTime * 4.f);
 
 		const float rounding = 8.f;
@@ -512,10 +512,10 @@ namespace Custom {
 		if (size.x <= 0.0f) size.x = ImMax(content_avail.x + size.x, 4.0f);
 		if (size.y <= 0.0f) size.y = ImMax(content_avail.y + size.y, 4.0f);
 
-		SetNextWindowPos(ImVec2(parent_window->DC.CursorPos + ImVec2(0, cap ? 45 : 0)));
-		SetNextWindowSize(size - ImVec2(0, cap ? 45 : 0));
+		SetNextWindowPos(ImVec2(parent_window->DC.CursorPos + ImVec2(0.f, cap ? 45.f : 0.f)));
+		SetNextWindowSize(size - ImVec2(0.f, cap ? 45.f : 0.f));
 
-		GetWindowDrawList()->AddRectFilled(parent_window->DC.CursorPos + ImVec2(0, cap ? 45 : 0), parent_window->DC.CursorPos + size_arg, GetColorU32(c::child::background), c::child::rounding, cap ? ImDrawFlags_RoundCornersBottom : ImDrawFlags_RoundCornersAll);
+		GetWindowDrawList()->AddRectFilled(parent_window->DC.CursorPos + ImVec2(0.f, cap ? 45.f : 0.f), parent_window->DC.CursorPos + size_arg, GetColorU32(c::child::background), c::child::rounding, cap ? ImDrawFlags_RoundCornersBottom : ImDrawFlags_RoundCornersAll);
 
 		if (cap) {
 
@@ -611,7 +611,7 @@ namespace Custom {
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
 		ImGui::PushClipRect(pos_min, pos_max, true);
-		ImGui::GetWindowDrawList()->AddShadowCircle(ImVec2(ImGui::GetMousePos()), 1.f, ImGui::GetColorU32(color), shadow_tickness, ImVec2(0, 0), 1000.f);
+		ImGui::GetWindowDrawList()->AddShadowCircle(ImVec2(ImGui::GetMousePos()), 1.f, ImGui::GetColorU32(color), shadow_tickness, ImVec2(0.f, 0.f), static_cast<ImDrawFlags>(1000));
 		ImGui::PopClipRect();
 		ImGui::PopStyleVar();
 	}

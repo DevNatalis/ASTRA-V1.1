@@ -1,4 +1,5 @@
-﻿#include <Includes/includes.hpp>
+#include <windows.h>
+#include <Includes/includes.hpp>
 #include <CustomWidgets/Custom.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
 #include <Core/SDK/SDK.hpp>
@@ -10,8 +11,8 @@ namespace Vehicless {
 
     inline void Render()
     {
-        static int SelectedVehicleIndex = -1;  // ✅ adicione isto no topo da função
-        bool IsVehicleSelected;                // ✅ esta também deve vir logo abaixo
+        static int SelectedVehicleIndex = -1;  // indice do veiculo selecionado
+        bool IsVehicleSelected;                // flag de selecao
 
         int subVs = g_MenuInfo.SubPage[g_MenuInfo.Vehicless];
         bool vVs0 = (subVs < 0 || subVs == 0), vVs1 = (subVs < 0 || subVs == 1);
@@ -137,7 +138,7 @@ namespace Vehicless {
                         }
                     }
 
-                    if (Custom::Button("Pedir Controle (beta)", ImVec2(-1, 30), 0))
+                    if (Custom::Button("Pedir Controle", ImVec2(-1, 30), 0))
                     {
                         if (Core::SDK::Pointers::pLocalPlayer != nullptr)
                             SDK2::g_Network->RequestControlOfVehicle2(Core::SDK::Pointers::pLocalPlayer, Veh, true, true);

@@ -43,7 +43,7 @@ void Core::Features::cMagicBullets::Start( )
 
 			if ( Core::SDK::Game::IsOnScreen( HeadToScreen ) ) 
 			{
-				int Fov = std::hypot( HeadToScreen.x - g_Variables.g_vGameWindowCenter.x, HeadToScreen.y - g_Variables.g_vGameWindowCenter.y );
+				int Fov = static_cast<int>(std::hypot( HeadToScreen.x - g_Variables.g_vGameWindowCenter.x, HeadToScreen.y - g_Variables.g_vGameWindowCenter.y ));
 				if ( Fov < g_Config.SilentAim->FOV ) {
 
 					if ( !Initialized ) {
@@ -53,9 +53,9 @@ void Core::Features::cMagicBullets::Start( )
 
 					bool Miss = g_Config.SilentAim->MissChance >= Utils::GenRandomInt( 0, 100 );
 
-					auto BulletStartPos = g_Config.SilentAim->Enabled ? HeadPos + D3DXVECTOR3( 0, 0, 0.3 ) : HeadPos;
+					auto BulletStartPos = g_Config.SilentAim->Enabled ? HeadPos + D3DXVECTOR3( 0.f, 0.f, 0.3f ) : HeadPos;
 
-					auto FinalPos = Miss ? BulletStartPos + D3DXVECTOR3( 0.0, 0.3, 0 ) : BulletStartPos;
+					auto FinalPos = Miss ? BulletStartPos + D3DXVECTOR3( 0.0f, 0.3f, 0.f ) : BulletStartPos;
 
 					Mem.Write( CWeapon + 0x20, FinalPos );
 				}

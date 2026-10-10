@@ -36,7 +36,7 @@ void Core::Features::cTriggerbot::Start( )
 
 				if (Core::SDK::Game::IsOnScreen(ScreenHeadPos))
 				{
-					int Fov = std::hypot(ScreenHeadPos.x - g_Variables.g_vGameWindowCenter.x, ScreenHeadPos.y - g_Variables.g_vGameWindowCenter.y);
+					int Fov = static_cast<int>(std::hypot(ScreenHeadPos.x - g_Variables.g_vGameWindowCenter.x, ScreenHeadPos.y - g_Variables.g_vGameWindowCenter.y));
 					if (Fov < g_Config.TriggerBot->FOV)
 					{
 						Shoot(g_Config.TriggerBot->Delay);

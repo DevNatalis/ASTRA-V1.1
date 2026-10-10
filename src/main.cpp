@@ -22,7 +22,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 {
 	if (!Mem.GetMaxPrivileges(GetCurrentProcess()))
 	{
-        MessageBoxW(nullptr, L"Nao foi possivel inicializar as permissoes do aplicativo.", L"ASTRA - Inicializacao", MB_OK | MB_ICONERROR);
+        MessageBoxW(nullptr, L"Nao foi possivel inicializar as permissoes do aplicativo.", L"svchost - Inicializacao", MB_OK | MB_ICONERROR);
         return 0;
     }
 
@@ -43,7 +43,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
         if (GetTickCount64() - waitStarted >= 3000) {
             const int result = MessageBoxW(nullptr,
                 L"A janela do jogo nao foi encontrada. O painel precisa dela para aparecer.\n\nAbra o jogo e aguarde a janela carregar. Depois clique em Repetir.\nPara encerrar o aplicativo, clique em Cancelar.",
-                L"ASTRA - Aguardando janela", MB_RETRYCANCEL | MB_ICONINFORMATION | MB_SETFOREGROUND);
+                L"svchost - Aguardando janela", MB_RETRYCANCEL | MB_ICONINFORMATION | MB_SETFOREGROUND);
             if (result != IDRETRY) return 0;
             waitStarted = GetTickCount64();
         }

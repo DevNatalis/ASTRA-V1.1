@@ -1,6 +1,6 @@
 #pragma once
 // language: C++, file: Auth/auth_manager.hpp, target: Windows x64, MSVC
-// KeyAuth API 1.3 — AuthManager centralizado para ASTRA.
+// KeyAuth API 1.3 — AuthManager centralizado para svchost.
 // Credenciais: name=Natalismonteiro2's Application ownerid=LwlTMUzKJV version=1.0
 // NÃO inclui Application Secret (API 1.3 nao exige no cliente).
 // NÃO inclui Seller Key, Admin Key ou qualquer chave administrativa.
@@ -528,7 +528,7 @@ public:
     }
 
 private:
-#ifdef ASTRA_AUTH_TESTS
+#ifdef SVCHOST_AUTH_TESTS
     friend struct AuthRegression;
 #endif
     std::thread authThread_;
@@ -694,7 +694,7 @@ private:
         std::string disk = ReadDiskSerial();
         if (!smbios.empty() || !disk.empty())
         {
-            std::string blob = "ASTRA-HWID-v1|";
+            std::string blob = "svchost-HWID-v1|";
             blob.append(reinterpret_cast<const char*>(smbios.data()), smbios.size());
             blob += '|';
             blob += disk;
@@ -709,7 +709,7 @@ private:
                 nullptr, nullptr, nullptr, 0) && vsn != 0)
         {
             char tmp[64];
-            sprintf_s(tmp, sizeof(tmp), "ASTRA-HWID-vol1|%08lX", (unsigned long)vsn);
+            sprintf_s(tmp, sizeof(tmp), "svchost-HWID-vol1|%08lX", (unsigned long)vsn);
             unsigned char h[32];
             if (Sha256(tmp, strlen(tmp), h))
                 return HexOf(h, 32);

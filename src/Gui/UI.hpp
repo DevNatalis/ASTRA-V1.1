@@ -1,5 +1,5 @@
 #pragma once
-// ASTRA 2.0 UI kit — BLACK + YELLOW identity.
+// svchost 2.0 UI kit — BLACK + YELLOW identity.
 // Visual layer only: no gameplay logic, no config access here.
 // Contrast rule: TEXT IS ALWAYS OPAQUE. Only surfaces carry alpha (dark glass).
 #include <Includes/Includes.hpp>
@@ -417,7 +417,7 @@ namespace UI
 		ImGui::Spacing();
 	}
 
-	// ---------- Thin header: category / page + ASTRA build status ----------
+	// ---------- Thin header: category / page + svchost build status ----------
 	inline void Header(const char* category, const char* page, const char* version)
 	{
         ImGuiWindow* window = ImGui::GetCurrentWindow();

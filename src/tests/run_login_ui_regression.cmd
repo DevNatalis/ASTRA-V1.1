@@ -21,8 +21,8 @@ if errorlevel 1 exit /b 1
 :have_toolchain
 cd /d "%~dp0.."
 if not exist "x64\Tests" mkdir "x64\Tests"
-rem ImGui objs: prefer the fresh MSBuild output; legacy ASTRA\ dir is a local fallback.
-set "IMGOBJ=ASTRA\x64\Release"
+rem ImGui objs: prefer the fresh MSBuild output; legacy svchost\ dir is a local fallback.
+set "IMGOBJ=svchost\x64\Release"
 if exist "x64\Release\imgui.obj" set "IMGOBJ=x64\Release"
 rem D3DX SDK: probe the real layout (env June 2010 vs NuGet), repo-root
 rem packages (CI) first when env gives nothing usable, src-local last.

@@ -192,7 +192,7 @@ void ImGui::StyleColorsDark(ImGuiStyle* dst)
     colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.29f, 0.48f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
     colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.00f, 0.00f, 0.25f); // Fundo da scrollbar (translúcido)
+    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.00f, 0.00f, 0.25f); // Fundo da scrollbar (translï¿½cido)
     colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.80f, 0.10f, 0.10f, 0.60f); // Estado normal
     colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.90f, 0.15f, 0.15f, 0.85f); // Hover
     colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(1.00f, 0.20f, 0.20f, 1.00f); // Ativo (clicado)
@@ -5036,7 +5036,7 @@ void ImGui::RenderBullet(ImDrawList* draw_list, ImVec2 pos, ImU32 col)
 void ImGui::RenderCheckMark(ImDrawList* draw_list, ImVec2 pos, ImU32 col, float sz)
 {
     //float thickness = ImMax(sz / 5.0f, 1.0f);
-    float thickness = 1.6;
+    float thickness = 1.6f;
     sz -= thickness * 0.5f;
     pos += ImVec2(thickness * 0.25f, thickness * 0.25f);
 

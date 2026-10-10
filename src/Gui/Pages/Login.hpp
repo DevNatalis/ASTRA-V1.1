@@ -113,7 +113,7 @@ namespace LoginUI
                 }
             }
         }
-        ImGui::Dummy(ImVec2(0, 12.f));
+        ImGui::Dummy(ImVec2(0, 8.f));
         ImGui::SetCursorPosX(left);
         const ImVec2 line = ImGui::GetCursorScreenPos();
         ImGui::GetWindowDrawList()->AddLine(line, line + ImVec2(width, 0), ImGui::GetColorU32(UI::BorderSoft()));
@@ -129,11 +129,16 @@ namespace LoginUI
             ImGui::SetScrollY(0);
         }
         ImGui::EndDisabled();
-        ImGui::Dummy(ImVec2(0, 12.f));
+        ImGui::Dummy(ImVec2(0, 8.f));
         ImGui::SetCursorPosX(left);
         ImGui::Checkbox("Menos animacoes", &UI::ReduceMotion);
-        ImGui::SetCursorPosX(left);
-        ImGui::TextColored(UI::TextDim(), "ASTRA %s", g_Variables.version.empty() ? "v1.0" : g_Variables.version.c_str());
+        ImGui::SameLine();
+        char versionText[32];
+        snprintf(versionText, sizeof(versionText), "svchost %s",
+            g_Variables.version.empty() ? "v1.0" : g_Variables.version.c_str());
+        const float versionWidth = ImGui::CalcTextSize(versionText).x;
+        ImGui::SetCursorPosX(left + width - versionWidth);
+        ImGui::TextColored(UI::TextDim(), "%s", versionText);
         ImGui::Dummy(ImVec2(0, 8.f));
     }
 

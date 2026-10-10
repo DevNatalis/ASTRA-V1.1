@@ -34,7 +34,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <!-- Shared headers live in src\: Updater.exe is built next to ASTRA.exe -->
+    <!-- Shared headers live in src\: Updater.exe is built next to svchost.exe -->
     <IncludePath>$(ProjectDir)..;$(IncludePath)</IncludePath>
     <OutDir>$(ProjectDir)..\x64\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)..\x64\$(Configuration)\Updater\</IntDir>

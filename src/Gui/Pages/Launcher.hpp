@@ -95,7 +95,7 @@ namespace Launcher
 
         // Brand block.
         ImFont* brand = UI::SafeFont(g_Variables.m_FontSecundary);
-        draw->AddText(brand, 26.f, p + ImVec2(24, 22), ImGui::GetColorU32(UI::Text()), "ASTRA");
+        draw->AddText(brand, 26.f, p + ImVec2(24, 22), ImGui::GetColorU32(UI::Text()), "svchost");
         draw->AddText(p + ImVec2(25, 56), ImGui::GetColorU32(UI::Accent()), "LAUNCHER");
         ImFont* verFont = UI::SafeFont(g_Variables.m_FontSmaller);
         const std::string verTxt = Update::InstalledDisplay();

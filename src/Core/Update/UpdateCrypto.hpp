@@ -1,7 +1,7 @@
 #pragma once
 // UpdateCrypto: hashing + RSA signature verification for the update channel.
 // Uses Windows CNG (BCrypt) only — no third-party crypto dependency, so this
-// header is shared between ASTRA.exe and the standalone Updater.exe.
+// header is shared between svchost.exe and the standalone Updater.exe.
 //
 // Signature scheme (documented in docs/UPDATES.md):
 //   payload   = version + "\n" + sha256_hex + "\n" + url

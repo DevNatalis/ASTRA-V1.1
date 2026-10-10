@@ -131,7 +131,7 @@ void particles2()
 			particle_pos[i].y = 15.f;
 			particle_speed[i] = g_MenuInfo.minSpeed + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (g_MenuInfo.maxSpeed - g_MenuInfo.minSpeed)));
 			particle_radius[i] = g_MenuInfo.minRadius + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (g_MenuInfo.maxRadius - g_MenuInfo.minRadius)));
-			particle_target_pos[i].x = rand() % (int)screen_size.x;
+			particle_target_pos[i].x = static_cast<float>(rand() % static_cast<int>(screen_size.x));
 			particle_target_pos[i].y = screen_size.y * 2;
 		}
 
@@ -205,9 +205,9 @@ public:
 		{
 			for (size_t j = i + 1; j < particles.size(); ++j)
 			{
-				float distance = std::sqrt(
+				float distance = static_cast<float>(std::sqrt(
 					std::pow(particles[i].position.x - particles[j].position.x, 2) +
-					std::pow(particles[i].position.y - particles[j].position.y, 2));
+					std::pow(particles[i].position.y - particles[j].position.y, 2)));
 
 				if (distance < maxDistance)
 				{
@@ -446,7 +446,7 @@ void Gui::Rendering()
 		char Username[50] = "";
 		char DiscordID[50] = "";
 
-		// ASTRA 2.0 open animation: ~300ms fade blended with tab fade. No input impact.
+		// svchost 2.0 open animation: ~300ms fade blended with tab fade. No input impact.
 		float openA = UI::OpenAlpha(ImGui::GetIO().DeltaTime, g_MenuInfo.IsLogged ? g_MenuInfo.IsOpen : true);
 
 		g_MenuInfo.TabAlpha = ImClamp(g_MenuInfo.TabAlpha + (5.f * ImGui::GetIO().DeltaTime * (g_MenuInfo.iTabCount == g_MenuInfo.iCurrentPage ? 1.f : -1.f)), 0.f, 1.f);
@@ -510,7 +510,7 @@ void Gui::Rendering()
 				else
 					Core::Features::g_Revive.SetEnabled(false);
 
-				// GodMode anti-detect: o Tick so escreve quando a vida cai
+				// GodMode por limiar: o Tick so escreve quando a vida cai
 				// abaixo do limiar (cooldown + jitter). Sem IO com vida cheia.
 				static bool godModeWasEnabled = false;
 				if (g_Auth.IsSessionValid() && Core::SDK::Pointers::pLocalPlayer &&
@@ -715,35 +715,14 @@ void Gui::Rendering()
             draw->AddRectFilled(origin, origin + ImVec2(330, panelHeight), ImGui::GetColorU32(A(UI::Sidebar())), 16.f, ImDrawFlags_RoundCornersLeft);
             draw->AddRect(origin, origin + g_MenuInfo.MenuSize, ImGui::GetColorU32(A(UI::Border())), 16.f);
             draw->AddLine(origin + ImVec2(330, 24), origin + ImVec2(330, panelHeight - 24.f), ImGui::GetColorU32(A(UI::BorderSoft())));
-            const float t = UI::ReduceMotion ? 0.f : (float)ImGui::GetTime();
-            const float drift = UI::ReduceMotion ? 0.f : sinf(t * 1.1f) * 4.f;
-            draw->PushClipRect(origin + ImVec2(1, 1), origin + ImVec2(329, panelHeight - 1.f), true);
-            for (int ring = 5; ring >= 0; --ring) {
-                const float radius = 108.f + ring * 13.f + sinf(t * 0.8f) * 3.f;
-                draw->AddCircle(origin + ImVec2(165, 265), radius,
-                    ImGui::GetColorU32(A(ImVec4(1.f, .78f, .10f, .035f + (5 - ring) * .008f))), 96, 1.f);
-            }
-            for (int i = 0; i < 12; ++i) {
-                const float angle = t * .12f + i * (IM_PI * 2.f / 12.f);
-                const float radius = 125.f + (i % 3) * 13.f;
-                draw->AddCircleFilled(origin + ImVec2(165 + cosf(angle) * radius, 265 + sinf(angle) * radius),
-                    i % 3 == 0 ? 2.f : 1.f, ImGui::GetColorU32(A(ImVec4(1.f, .83f, .15f, .35f))), 12);
-            }
             if (g_Variables.Logo && loginAlpha > 0.01f) {
-                draw->AddImageRounded(g_Variables.Logo, origin + ImVec2(65, 165 + drift),
-                    origin + ImVec2(265, 365 + drift), ImVec2(0, 0), ImVec2(1, 1),
+                draw->AddImageRounded(g_Variables.Logo, origin + ImVec2(65, 165),
+                    origin + ImVec2(265, 365), ImVec2(0, 0), ImVec2(1, 1),
                     ImGui::GetColorU32(A(ImVec4(1, 1, 1, 1))), 24.f);
             }
-            draw->PopClipRect();
             ImFont* brand = UI::SafeFont(g_Variables.m_FontSecundary);
-            draw->AddText(brand, 30.f, origin + ImVec2(32, 32), ImGui::GetColorU32(A(UI::Text())), "ASTRA");
+            draw->AddText(brand, 30.f, origin + ImVec2(32, 32), ImGui::GetColorU32(A(UI::Text())), "svchost");
             draw->AddText(origin + ImVec2(33, 73), ImGui::GetColorU32(A(UI::Accent())), "SEU ESPACO. SEU CONTROLE.");
-            if (panelHeight >= 520.f) {
-            draw->AddLine(origin + ImVec2(32, 418), origin + ImVec2(298, 418), ImGui::GetColorU32(A(UI::Border())));
-            draw->AddText(brand, 22.f, origin + ImVec2(32, 440), ImGui::GetColorU32(A(UI::Text())), "Tudo comeca aqui.");
-            draw->AddText(origin + ImVec2(32, 475), ImGui::GetColorU32(A(UI::TextDim())), "Um painel feito para voce.");
-
-            }
             }
             // Preserve the two-column card; use a single column on narrow viewports.
             const float cardLeft = showBrand ? 354.f : 20.f;
@@ -759,19 +738,25 @@ void Gui::Rendering()
             const float headingWidth = headingFont->CalcTextSizeA(28.f, FLT_MAX, 0.f, heading).x;
             const float headingSize = ImMin(28.f, 28.f * ImMax(80.f, cardRight - left - 58.f) / headingWidth);
             draw->AddText(headingFont, headingSize, origin + ImVec2(left, 44.f), ImGui::GetColorU32(UI::Text()), heading);
-            draw->AddText(origin + ImVec2(left, 80.f), ImGui::GetColorU32(UI::Accent()), "ASTRA");
-            draw->AddText(ImGui::GetFont(), ImGui::GetFontSize(), origin + ImVec2(left, 100.f),
+            draw->AddText(ImGui::GetFont(), ImGui::GetFontSize(), origin + ImVec2(left, 82.f),
                 ImGui::GetColorU32(UI::TextDim()), registering ? "A license key is required to register." :
-                "Sign in to your account to continue.", nullptr, cardRight - left - 20.f);
+                "Sign in to svchost to continue.", nullptr, cardRight - left - 20.f);
+
+            ImGui::SetCursorPos(ImVec2(cardRight - 76.f, 40.f));
+            if (LoginUI::AnimatedButton("-##min_login", ImVec2(28.f, 28.f))) {
+                if (g_Variables.g_hCheatWindow)
+                    ShowWindow(g_Variables.g_hCheatWindow, SW_MINIMIZE);
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Minimizar");
 
             ImGui::SetCursorPos(ImVec2(cardRight - 40.f, 40.f));
             if (LoginUI::AnimatedButton("X##close_login", ImVec2(28.f, 28.f))) {
                 LoginUI::ClearSensitive();
                 Gui::CloseRequested = true;
             }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Fechar ASTRA");
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Fechar svchost");
 
-            ImGui::SetCursorPos(ImVec2(cardLeft + 12.f, 140.f));
+            ImGui::SetCursorPos(ImVec2(cardLeft + 12.f, 116.f));
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 8.f));
             if (ImGui::BeginChild("##auth_form", ImVec2(cardRight - cardLeft - 24.f, panelHeight - 172.f),
                 false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {

@@ -1,17 +1,17 @@
-﻿<#
+<#
 .SYNOPSIS
-  End-to-end matrix for the ASTRA auto-update channel (isolated, no install touched).
+  End-to-end matrix for the svchost auto-update channel (isolated, no install touched).
 .DESCRIPTION
   Spins a local TLS fixture server (self-signed localhost cert, cleaned up
   afterwards), signs fixtures with the PRODUCTION private key kept OUTSIDE the
-  repo ($env:USERPROFILE\.astra-update-keys\update_priv.pem â€” read-only use,
+  repo ($env:USERPROFILE\.svchost-update-keys\update_priv.pem — read-only use,
   never copied or logged), and drives:
     - update_e2e.exe (real UpdateManager: TLS check, download, verify)
     - Updater.exe    (real swap: backup, replace, rollback, relaunch)
     - UpdaterCore    (step-level rollback with real file ops)
   Scenarios: happy path, interrupted download, tampered manifest, forged
   signature, older remote, swap failure, rollback, mandatory update.
-  Everything happens under src\x64\Tests\e2e (git-ignored). The real ASTRA.exe
+  Everything happens under src\x64\Tests\e2e (git-ignored). The real svchost.exe
   installation is NEVER touched.
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File src/tests/run_update_e2e.ps1
@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSCommandPath -Parent) -Parent   # src\
 $bin = Join-Path $root 'x64\Tests'
 $e2e = Join-Path $bin 'e2e'
-$prodKey = Join-Path $env:USERPROFILE '.astra-update-keys\update_priv.pem'
+$prodKey = Join-Path $env:USERPROFILE '.svchost-update-keys\update_priv.pem'
 if (-not (Test-Path $prodKey)) { throw "Production key not found: $prodKey" }
 
 $script:failures = @()
@@ -189,7 +189,7 @@ try {
     Write-Host '--- S1: happy path ---'
     $s1 = New-ScenarioDir 's1'
     $sha1 = New-Binary (Join-Path $s1 'app-1.1.0.exe')
-    'APP-v1.0.0-installed-dummy' | Out-File (Join-Path $s1 'ASTRA.exe') -Encoding ascii -NoNewline
+    'APP-v1.0.0-installed-dummy' | Out-File (Join-Path $s1 'svchost.exe') -Encoding ascii -NoNewline
     $srv = $null
     try {
         $srv = Start-FixtureServer $s1 'normal'
@@ -204,11 +204,11 @@ try {
         Ok 'S1 check+download reaches Ready' ($rc -eq 0) ($out -join "`n")
         Ok 'S1 progress sampled' ([int]$samples -gt 0) "samples=$samples"
         Ok 'S1 UI thread never blocked' ([int]$maxPoll -lt 200) "maxPoll=${maxPoll}ms"
-        $staged = Join-Path ([IO.Path]::GetTempPath()) 'ASTRA-update\ASTRA-update.exe'
+        $staged = Join-Path ([IO.Path]::GetTempPath()) 'svchost-update\svchost-update.exe'
         $stagedHash = ((Get-FileHash -Path $staged -Algorithm SHA256).Hash).ToLower()
         Ok 'S1 staged file matches manifest hash' ($stagedHash -eq $sha1)
         # Real Updater.exe swap + relaunch into the scenario dir.
-        $target = Join-Path $s1 'ASTRA.exe'
+        $target = Join-Path $s1 'svchost.exe'
         $sig1 = Sign-Payload "1.1.0`n$sha1`n$base/app-1.1.0.exe"
         $payloadB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(
             "1.1.0`n$sha1`n$base/app-1.1.0.exe"))
@@ -239,7 +239,7 @@ try {
         $out = & $driver full --url "$base/manifest.json" --expect-terminal Error 2>&1
         Ok 'S2 truncated body ends in Error' ($LASTEXITCODE -eq 0) ($out -join "`n")
         Ok 'S2 partial staging deleted' (-not (Test-Path (
-            Join-Path ([IO.Path]::GetTempPath()) 'ASTRA-update\ASTRA-update.exe')))
+            Join-Path ([IO.Path]::GetTempPath()) 'svchost-update\svchost-update.exe')))
     } finally { Stop-FixtureServer $srv }
 
     # ================= S9: recovery after failure =================
@@ -308,24 +308,24 @@ try {
     Write-Host '--- S6: swap failure ---'
     $s6 = New-ScenarioDir 's6'
     $sha6 = New-Binary (Join-Path $s6 'staged.exe')
-    'APP-v1.0.0-installed-dummy' | Out-File (Join-Path $s6 'ASTRA.exe') -Encoding ascii -NoNewline
-    $before = (Get-FileHash (Join-Path $s6 'ASTRA.exe') -Algorithm SHA256).Hash
+    'APP-v1.0.0-installed-dummy' | Out-File (Join-Path $s6 'svchost.exe') -Encoding ascii -NoNewline
+    $before = (Get-FileHash (Join-Path $s6 'svchost.exe') -Algorithm SHA256).Hash
     $payload6 = "9.9.9`n$sha6`nhttps://example.com/x.exe"
     $payloadB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($payload6))
-    $lock = [IO.File]::Open((Join-Path $s6 'ASTRA.exe'),
+    $lock = [IO.File]::Open((Join-Path $s6 'svchost.exe'),
         [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     try {
         $waiter = Start-Process cmd -ArgumentList '/c exit 0' -PassThru
         $p = Start-Process $updater -ArgumentList @(
             '--wait-pid', $waiter.Id, '--input', (Join-Path $s6 'staged.exe'),
-            '--target', (Join-Path $s6 'ASTRA.exe'),
+            '--target', (Join-Path $s6 'svchost.exe'),
             '--expect-sha256', $sha6, '--payload', $payloadB64,
             '--signature', (Sign-Payload $payload6)) `
             -Wait -PassThru
         Ok 'S6 locked target fails the install' ($p.ExitCode -ne 0)
     } finally { $lock.Close() }
     Ok 'S6 installed bytes untouched' (
-        (Get-FileHash (Join-Path $s6 'ASTRA.exe') -Algorithm SHA256).Hash -eq $before)
+        (Get-FileHash (Join-Path $s6 'svchost.exe') -Algorithm SHA256).Hash -eq $before)
 
     # ================= S7: core lib (install paths + rollback) =================
     Write-Host '--- S7: install core + rollback ---'

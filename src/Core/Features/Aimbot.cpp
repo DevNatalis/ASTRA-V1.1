@@ -90,10 +90,10 @@ void Core::Features::cAimbot::Start()
 
             if (Core::SDK::Game::IsOnScreen(ScreenHeadPos))
             {
-                int Fov = std::hypot(ScreenHeadPos.x - g_Variables.g_vGameWindowCenter.x, ScreenHeadPos.y - g_Variables.g_vGameWindowCenter.y);
+                int Fov = static_cast<int>(std::hypot(ScreenHeadPos.x - g_Variables.g_vGameWindowCenter.x, ScreenHeadPos.y - g_Variables.g_vGameWindowCenter.y));
                 if (Fov < g_Config.Aimbot->FOV)
                 {
-                    SetViewAngles(Ped, HeadPos + D3DXVECTOR3(0, 0, 0.08));
+                    SetViewAngles(Ped, HeadPos + D3DXVECTOR3(0.f, 0.f, 0.08f));
                 }
             }
         }

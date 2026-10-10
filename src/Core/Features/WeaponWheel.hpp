@@ -93,7 +93,7 @@ namespace Core
 			static bool LooksAlive(CPed* ped)
 			{
 				if (!ped) return false;
-				const float h = Mem.Read<float>(reinterpret_cast<uintptr_t>(ped) + 0x280);
+				const float h = Mem.Read<float>(reinterpret_cast<uintptr_t>(ped) + (g_Offsets.m_MaxHealth ? (g_Offsets.m_MaxHealth - 4u) : 0x280u));
 				return h > 0.0f && h < SanityMax;
 			}
 		};

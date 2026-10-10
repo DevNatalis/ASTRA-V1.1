@@ -21,7 +21,7 @@ para visualizar esses grupos.
 
 ## Organização realizada
 
-- `ASTRA/` foi movida para `build/archive/ASTRA/`.
+- `svchost/` foi movida para `build/archive/svchost/`.
 - `Gosth Fivem/` foi movida para `build/archive/Gosth Fivem/`.
 - Os 97 arquivos movidos tiveram seu conteúdo verificado por SHA-256.
 - `src.vcxproj.filters` foi criado com os mesmos itens declarados no projeto.

@@ -42,7 +42,7 @@ struct UpdateRegression {
     static void Manifest() {
         const char* good = R"({
             "version": "1.1.0",
-            "url": "https://example.com/ASTRA-1.1.0.exe",
+            "url": "https://example.com/svchost-1.1.0.exe",
             "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
             "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
             "mandatory": true,
@@ -56,7 +56,7 @@ struct UpdateRegression {
         Check(m.mandatory, "manifest mandatory parsed");
         Check(m.minVersion.Str() == "1.0.0", "manifest min_version parsed");
         Check(m.status == "Disponivel", "manifest status parsed");
-        Check(m.Payload() == "1.1.0\nba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\nhttps://example.com/ASTRA-1.1.0.exe",
+        Check(m.Payload() == "1.1.0\nba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\nhttps://example.com/svchost-1.1.0.exe",
             "signature payload is canonical");
         // A forged/garbage signature must never verify against the embedded key.
         Check(!m.VerifySignature(), "forged signature never verifies");
@@ -109,7 +109,7 @@ struct UpdateRegression {
         Check(BCRYPT_SUCCESS(BCryptGenerateKeyPair(hAlg, &hKey, 2048, 0)), "rsa key generates");
         Check(BCRYPT_SUCCESS(BCryptFinalizeKeyPair(hKey, 0)), "rsa key finalizes");
 
-        const char* msg = "1.1.0\nabc123\nhttps://example.com/ASTRA-1.1.0.exe";
+        const char* msg = "1.1.0\nabc123\nhttps://example.com/svchost-1.1.0.exe";
         unsigned char digest[32];
         Check(Update::Crypto::Sha256(msg, strlen(msg), digest), "payload hashes");
 

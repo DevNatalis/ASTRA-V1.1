@@ -1,9 +1,9 @@
-#include <Includes/includes.hpp>
-#include <Includes/CustomWidgets/Notify.hpp>
-#include <Core/Features/GodMode.hpp>
 #include <windows.h>
 #include <iostream>
 #include <thread>
+#include <Includes/includes.hpp>
+#include <Includes/CustomWidgets/Notify.hpp>
+#include <Core/Features/GodMode.hpp>
 
 using namespace std;
 
@@ -172,8 +172,8 @@ namespace World {
                             if (target->InVehicle()) {
                                 CVehicle* veh = target->GetLastVehicle();
                                 if (veh) {
-                                    float engineHealth = Mem.Read<float>((uintptr_t)veh + 0x280);
-                                    Mem.Write<float>((uintptr_t)veh + 0x280, -1000.f);
+                                    float engineHealth = Mem.Read<float>((uintptr_t)veh + (g_Offsets.m_VehicleEngineHealth ? g_Offsets.m_VehicleEngineHealth : 0x280u));
+                                    Mem.Write<float>((uintptr_t)veh + (g_Offsets.m_VehicleEngineHealth ? g_Offsets.m_VehicleEngineHealth : 0x280u), -1000.f);
                                     Mem.Write<uint8_t>((uintptr_t)veh + 0x2E, 2);
                                     NotifyManager::Send(xorstr("Veiculo explodido!"), 2000);
                                 }

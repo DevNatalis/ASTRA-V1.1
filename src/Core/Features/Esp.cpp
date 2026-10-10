@@ -83,7 +83,7 @@ void Core::Features::cEsp::Draw( )
 			hoverOffsetX = ImLerp(hoverOffsetX, targetX, ImGui::GetIO().DeltaTime * 8.f);
 			hoverOffsetY = ImLerp(hoverOffsetY, targetY, ImGui::GetIO().DeltaTime * 8.f);
 
-			float pulse = sinf(ImGui::GetTime() * 3.0f) * 0.15f + 0.85f;
+			float pulse = sinf(static_cast<float>(ImGui::GetTime()) * 3.0f) * 0.15f + 0.85f;
 			glowAlpha = ImLerp(glowAlpha, hovering ? 120.f : 60.f, ImGui::GetIO().DeltaTime * 6.f);
 
 			float drawX = panelX + hoverOffsetX;
@@ -167,10 +167,10 @@ void Core::Features::cEsp::Draw( )
 		}
 
 		D3DXVECTOR3 HeadPos = Ped->GetBonePosDefault( 0 );
-		D3DXVECTOR2 EntityTop = Core::SDK::Game::WorldToScreen( HeadPos + D3DXVECTOR3( 0, 0, 0.2 ) ); //Head
+		D3DXVECTOR2 EntityTop = Core::SDK::Game::WorldToScreen( HeadPos + D3DXVECTOR3( 0.f, 0.f, 0.2f ) ); //Head
 
 		D3DXVECTOR2 EntityBottom = Core::SDK::Game::WorldToScreen(
-			Ped->GetBonePosDefault( 8 ) - ( g_Offsets.CurrentBuild >= 2802 ? D3DXVECTOR3( 0, 0, 2 ) : D3DXVECTOR3( 0, 0, 1.2 ) ) //Abdomen
+			Ped->GetBonePosDefault( 8 ) - ( g_Offsets.CurrentBuild >= 2802 ? D3DXVECTOR3( 0.f, 0.f, 2.f ) : D3DXVECTOR3( 0.f, 0.f, 1.2f ) ) //Abdomen
 		);
 
 
@@ -232,14 +232,14 @@ void Core::Features::cEsp::Draw( )
 			std::string PlayerUnFriend = xorstr( "Unfriend" );
 
 
-			int FovSize = std::hypot( BoxCenter.x - g_Variables.g_vGameWindowCenter.x, BoxCenter.y - g_Variables.g_vGameWindowCenter.y );
+			int FovSize = static_cast<int>(std::hypot( BoxCenter.x - g_Variables.g_vGameWindowCenter.x, BoxCenter.y - g_Variables.g_vGameWindowCenter.y ));
 
 			ImGui::PushFont( g_Variables.m_FontSmaller );
 
 			if ( IsFriend && FovSize < FovRadius )
 			{
-				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 1 : 4, ImColor( 0, 0, 0 ), 999 );
-				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 0 : 3, ImColor( g_Col.Base ), 999 );
+				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 1.f : 4.f, ImColor( 0, 0, 0 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 0.f : 3.f, ImColor( g_Col.Base ), 999 );
 
 				//ImVec2 TextSize = g_Variables.m_FontSmaller->CalcTextSizeA( g_Variables.m_FontSmaller->FontSize, FLT_MAX, 0.0f, PlayerUnFriend.c_str( ) );
 				//DrawList->AddText( ImVec2( BoxCenter.x - ( TextSize.x / 2 ), BoxCenter.y ), ImColor( 0, 0, 0 ), PlayerUnFriend.c_str( ) );
@@ -253,8 +253,8 @@ void Core::Features::cEsp::Draw( )
 			}
 			else if( !IsFriend && FovSize < FovRadius )
 			{
-				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 1 : 4, ImColor( 0, 0, 0 ), 999 );
-				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 0 : 3, ImColor( 255, 255, 255 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 1.f : 4.f, ImColor( 0, 0, 0 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( BoxCenter.x, BoxCenter.y ), radius + Distance < 1 ? 0.f : 3.f, ImColor( 255, 255, 255 ), 999 );
 
 				//ImVec2 TextSize = g_Variables.m_FontSmaller->CalcTextSizeA( g_Variables.m_FontSmaller->FontSize, FLT_MAX, 0.0f, PlayerSetFriend.c_str( ) );
 				//DrawList->AddText( ImVec2( BoxCenter.x - ( TextSize.x / 2 ), BoxCenter.y ), ImColor( 0, 0, 0 ), PlayerSetFriend.c_str( ) );
@@ -396,11 +396,11 @@ void Core::Features::cEsp::Draw( )
 				D3DXVECTOR2 head_screen_pos = SDK::Game::WorldToScreen( HeadPos );
 				if ( head_screen_pos != D3DXVECTOR2( 0, 0 ) ) {
 
-					int CircleValue = Height / 15;
-					if ( CircleValue <= 10 ) { Height / 20; }
+					int CircleValue = static_cast<int>(Height / 15.f);
+					if ( CircleValue <= 10 ) { (void)(Height / 20.f); }
 
 					ImVec2 center( head_screen_pos.x, head_screen_pos.y );
-					DrawList->AddCircle( center, CircleValue, Cfg->SkeletonCol, 999, 1.5 );
+					DrawList->AddCircle( center, static_cast<float>(CircleValue), Cfg->SkeletonCol, 999, 1.5f );
 				}
 			}
 		}
@@ -828,12 +828,12 @@ void Core::Features::cEsp::DrawVehicle( )
 			const static int Delay = 500;
 
 
-			int FovSize = std::hypot( VehicleLocation.x - g_Variables.g_vGameWindowCenter.x, VehicleLocation.y - g_Variables.g_vGameWindowCenter.y );
+			int FovSize = static_cast<int>(std::hypot( VehicleLocation.x - g_Variables.g_vGameWindowCenter.x, VehicleLocation.y - g_Variables.g_vGameWindowCenter.y ));
 
 			if ( IsLocked )
 			{
-				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 1 : 4, ImColor( 0, 0, 0 ), 999 );
-				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 0 : 3, ImColor( 250, 72, 62, 255 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 1.f : 4.f, ImColor( 0, 0, 0 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 0.f : 3.f, ImColor( 250, 72, 62, 255 ), 999 );
 
 				if ( FovSize < fovRadius )
 				{
@@ -851,8 +851,8 @@ void Core::Features::cEsp::DrawVehicle( )
 			}
 			else if ( !IsLocked )
 			{
-				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 1 : 4, ImColor( 0, 0, 0 ), 999 );
-				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 0 : 3, ImColor( 102, 255, 133, 255 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 1.f : 4.f, ImColor( 0, 0, 0 ), 999 );
+				DrawList->AddCircleFilled( ImVec2( VehicleLocation.x, VehicleLocation.y - 6 ), radius + Distance < 1 ? 0.f : 3.f, ImColor( 102, 255, 133, 255 ), 999 );
 
 				if ( FovSize < fovRadius )
 				{

@@ -13,6 +13,9 @@
 
 // Features
 #include "Features/MagicBullets.hpp"
+#include "Features/GodMode.hpp"
+#include "Features/WeaponWheel.hpp"
+#include "Features/Revive.hpp"
 #include "Features/Triggerbot.hpp"
 #include "Features/SilentAim.hpp"
 #include "Features/Aimbot.hpp"

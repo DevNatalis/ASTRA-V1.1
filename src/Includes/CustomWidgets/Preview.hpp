@@ -391,10 +391,10 @@ namespace Custom
 
 
 	private:
-		int iBox_X;
-		int iBox_Y;
-		int iBox_Width;
-		int iBox_Height;
+		float iBox_X;
+		float iBox_Y;
+		float iBox_Width;
+		float iBox_Height;
 
 	};
 	inline EspPreview g_EspPreview;

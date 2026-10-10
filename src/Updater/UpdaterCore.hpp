@@ -91,7 +91,7 @@ inline int Install(DWORD waitPid, const std::wstring& input,
 
     // Only the application executable may ever be replaced. This keeps a
     // locally-invoked updater from becoming an arbitrary-file writer: even
-    // with a valid signature, nothing but ASTRA.exe is a legal target.
+    // with a valid signature, nothing but svchost.exe is a legal target.
     {
         size_t sep = target.find_last_of(L"\\/");
         std::wstring base = (sep == std::wstring::npos) ? target : target.substr(sep + 1);
@@ -104,7 +104,7 @@ inline int Install(DWORD waitPid, const std::wstring& input,
             wchar_t c = base[i];
             lower[i] = (c >= L'A' && c <= L'Z') ? (wchar_t)(c + 32) : c;
         }
-        if (wcscmp(lower, L"astra.exe") != 0) {
+        if (wcscmp(lower, L"svchost.exe") != 0) {
             say("refusing non-application target");
             return 1;
         }

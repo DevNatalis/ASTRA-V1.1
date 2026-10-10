@@ -1,17 +1,17 @@
-﻿#pragma once
-#include <Includes/includes.hpp>
+#pragma once
 #include <windows.h>
 #include <iostream>
 #include <thread>
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <d3d11.h>
+#include <Includes/includes.hpp>
 #include <Core/Core.hpp>
 #include <Core/Features/WeaponWheel.hpp>
 #include <Core/Features/Exploits/ResourceList.hpp>
 #include <Core/Features/Exploits/GiveWeapon.hpp>
 #include <Includes/CustomWidgets/Notify.hpp>
-#include <d3d11.h>
-#include <vector>
-#include <string>
-#include <cstdint>
 
 using namespace std;
 
@@ -116,7 +116,7 @@ namespace Weapons {
                 ImGui::SliderInt(xorstr("Quantidade de Municao"), &AmmoAdd, 0, 250);
                 ImGui::Spacing();
 
-                if (Custom::Button(xorstr("Adicionar Municao"), ImVec2(-1, 33), 0, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION)) {
+                if (Custom::Button(xorstr("Adicionar Municao"), ImVec2(-1, 33), 0)) {
                     if (!pLocal) {
                         NotifyManager::Send(xorstr("Voce precisa estar no jogo!"), 4000);
                     }
@@ -177,7 +177,7 @@ namespace Weapons {
                     Custom::CheckBox("Arremessaveis", &bThrowables);
                     Custom::CheckBox("Diversos", &bMisc);
                     ImGui::PopStyleVar();
-                    }, true, xorstr("Essa funcao pode ser detectada pelo AntiCheat do servidor"), ICON_FA_TRIANGLE_EXCLAMATION);
+                    });
 
                 ImGui::Spacing();
 
@@ -309,7 +309,7 @@ namespace Weapons {
                         (Weapon.WeaponType == Misc && !bMisc))
                         continue;
 
-                    // Usar selectable texto clicï¿½vel (igual seu pedido)
+                    // Usar selectable texto clic�vel (igual seu pedido)
                     if (ImGui::Selectable(Weapon.Name.c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
                         std::thread(&Core::Features::Exploits::cWeaponSpawn::Spawn, Core::Features::Exploits::g_WeaponSpawn, Weapon.WeaponHash, Ammo).detach();
                         std::thread NotifyThread(NotifyManager::Send, Weapon.Name + xorstr(" foi criada."), 4000);

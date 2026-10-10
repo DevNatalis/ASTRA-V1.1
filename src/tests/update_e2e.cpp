@@ -1,4 +1,4 @@
-﻿// update_e2e: headless driver for the update end-to-end matrix.
+// update_e2e: headless driver for the update end-to-end matrix.
 // Modes:
 //   check   --url U --expect-state S [--expect-version V] [--expect-mandatory 0|1]
 //   full    --url U --expect-terminal Ready|Error [--expect-version V]
@@ -177,7 +177,7 @@ int ModeCoreLib(int argc, char** argv) {
                      const std::string& stagedData) -> std::wstring {
         std::wstring W = ToWide(dir + std::string("\\") + sub);
         CreateDirectoryW(W.c_str(), nullptr);
-        WriteFile(W + L"\\ASTRA.exe", targetData);
+        WriteFile(W + L"\\svchost.exe", targetData);
         if (!stagedData.empty())
             WriteFile(W + L"\\staged.exe", stagedData);
         else
@@ -188,10 +188,10 @@ int ModeCoreLib(int argc, char** argv) {
     // Case A: full Install() success path (real functions, real files).
     {
         std::wstring W = setup("a", contentA, contentB);
-        int rc = UpdaterCore::Install(waitPid, W + L"\\staged.exe", W + L"\\ASTRA.exe",
+        int rc = UpdaterCore::Install(waitPid, W + L"\\staged.exe", W + L"\\svchost.exe",
             sha, payload, sig, false, nullptr);
-        bool ok = (rc == 0) && (ReadFile(W + L"\\ASTRA.exe") == contentB) &&
-                  (GetFileAttributesW((W + L"\\ASTRA.exe.bak").c_str()) ==
+        bool ok = (rc == 0) && (ReadFile(W + L"\\svchost.exe") == contentB) &&
+                  (GetFileAttributesW((W + L"\\svchost.exe.bak").c_str()) ==
                    INVALID_FILE_ATTRIBUTES);
         std::cout << "CORELIB_INSTALL=" << (ok ? "ok" : "FAIL") << "\n";
         if (!ok) ++failures;
@@ -200,9 +200,9 @@ int ModeCoreLib(int argc, char** argv) {
     // Case B: tampered staged file -> exit 1, installed build untouched.
     {
         std::wstring W = setup("b", contentA, contentB + "TAMPERED");
-        int rc = UpdaterCore::Install(waitPid, W + L"\\staged.exe", W + L"\\ASTRA.exe",
+        int rc = UpdaterCore::Install(waitPid, W + L"\\staged.exe", W + L"\\svchost.exe",
             sha, payload, sig, false, nullptr);
-        bool ok = (rc != 0) && (ReadFile(W + L"\\ASTRA.exe") == contentA);
+        bool ok = (rc != 0) && (ReadFile(W + L"\\svchost.exe") == contentA);
         std::cout << "CORELIB_TAMPER=" << (ok ? "ok" : "FAIL") << "\n";
         if (!ok) ++failures;
     }
@@ -212,23 +212,23 @@ int ModeCoreLib(int argc, char** argv) {
         std::wstring W = setup("c", contentA, contentB);
         std::string badSig = sig;
         badSig[10] = (badSig[10] == 'A' ? 'B' : 'A');
-        int rc = UpdaterCore::Install(waitPid, W + L"\\staged.exe", W + L"\\ASTRA.exe",
+        int rc = UpdaterCore::Install(waitPid, W + L"\\staged.exe", W + L"\\svchost.exe",
             sha, payload, badSig, false, nullptr);
-        bool ok = (rc != 0) && (ReadFile(W + L"\\ASTRA.exe") == contentA);
+        bool ok = (rc != 0) && (ReadFile(W + L"\\svchost.exe") == contentA);
         std::cout << "CORELIB_FAKESIG=" << (ok ? "ok" : "FAIL") << "\n";
         if (!ok) ++failures;
     }
 
-    // Case D: rollback â€” backup, swap, corrupt target, verify fails,
+    // Case D: rollback — backup, swap, corrupt target, verify fails,
     // RestoreBackup must bring back the exact original bytes.
     {
         std::wstring W = setup("d", contentA, contentB);
-        bool okD = UpdaterCore::BackupFile(W + L"\\ASTRA.exe", W + L"\\ASTRA.exe.bak") &&
-                   UpdaterCore::SwapFile(W + L"\\staged.exe", W + L"\\ASTRA.exe") &&
-                   WriteFile(W + L"\\ASTRA.exe", contentB + "CORRUPT-POST-SWAP") &&
-                   !UpdaterCore::HashMatches(W + L"\\ASTRA.exe", sha) &&
-                   UpdaterCore::RestoreBackup(W + L"\\ASTRA.exe.bak", W + L"\\ASTRA.exe") &&
-                   (ReadFile(W + L"\\ASTRA.exe") == contentA);
+        bool okD = UpdaterCore::BackupFile(W + L"\\svchost.exe", W + L"\\svchost.exe.bak") &&
+                   UpdaterCore::SwapFile(W + L"\\staged.exe", W + L"\\svchost.exe") &&
+                   WriteFile(W + L"\\svchost.exe", contentB + "CORRUPT-POST-SWAP") &&
+                   !UpdaterCore::HashMatches(W + L"\\svchost.exe", sha) &&
+                   UpdaterCore::RestoreBackup(W + L"\\svchost.exe.bak", W + L"\\svchost.exe") &&
+                   (ReadFile(W + L"\\svchost.exe") == contentA);
         std::cout << "CORELIB_ROLLBACK=" << (okD ? "ok" : "FAIL") << "\n";
         if (!okD) ++failures;
     }
