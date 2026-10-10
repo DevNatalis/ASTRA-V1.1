@@ -17,16 +17,14 @@ namespace Core
 		public:
 			void Tick()
 			{
-				const auto now = std::chrono::steady_clock::now();
-				if (lastTick_ != std::chrono::steady_clock::time_point{} &&
-					std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTick_).count() < kTickMs)
-					return;
-				lastTick_ = now;
-
 				CPed* ped = SDK::Pointers::pLocalPlayer;
 				if (!ped)
 					return;
 
+				// Flags (leitura + escrita condicional): reaplicacao
+				// imediata, todo frame. O jogo/servidor limpa essas
+				// flags em eventos (dano, veiculo, sync); reaplicar
+				// no frame seguinte nao da janela para o revert.
 				if (g_Config.Player->AntiHSEnabled)
 					ped->SetConfigFlag(ePedConfigFlag::NoCriticalHits, true);
 				if (g_Config.Player->ShrinkEnabled)
@@ -36,6 +34,14 @@ namespace Core
 					ped->SetConfigFlag(ePedConfigFlag::PlayerCanJackFriendlyPlayers, true);
 					ped->SetConfigFlag(ePedConfigFlag::WillJackAnyPlayer, true);
 				}
+
+				const auto now = std::chrono::steady_clock::now();
+				if (lastTick_ != std::chrono::steady_clock::time_point{} &&
+					std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTick_).count() < kTickMs)
+					return;
+				lastTick_ = now;
+
+				// Escritas incondicionais: cadencia de 500ms.
 				if (g_Config.Player->NoRagDollEnabled)
 					ped->NoRagDoll(true);
 				if (g_Config.Player->InfiniteStamina)
