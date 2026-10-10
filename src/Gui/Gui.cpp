@@ -742,13 +742,6 @@ void Gui::Rendering()
                 ImGui::GetColorU32(UI::TextDim()), registering ? "A license key is required to register." :
                 "Sign in to svchost to continue.", nullptr, cardRight - left - 20.f);
 
-            ImGui::SetCursorPos(ImVec2(cardRight - 76.f, 40.f));
-            if (LoginUI::AnimatedButton("-##min_login", ImVec2(28.f, 28.f))) {
-                if (g_Variables.g_hCheatWindow)
-                    ShowWindow(g_Variables.g_hCheatWindow, SW_MINIMIZE);
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Minimizar");
-
             ImGui::SetCursorPos(ImVec2(cardRight - 40.f, 40.f));
             if (LoginUI::AnimatedButton("X##close_login", ImVec2(28.f, 28.f))) {
                 LoginUI::ClearSensitive();
